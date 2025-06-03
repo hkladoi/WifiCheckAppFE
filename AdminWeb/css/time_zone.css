@@ -1,0 +1,70 @@
+    .save-btn {
+      background-color: #28a745; /* Xanh lá cây */
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: background-color 0.2s ease;
+    }
+    .save-btn:hover {
+      background-color: #218838; /* Xanh lá đậm hơn khi hover */
+    }
+
+    /* CSS cho ô input thời gian và lý do */
+    input[type="time"], input[type="text"] {
+      border: 1px solid #ccc;
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-size: 14px;
+      width: 120px;
+      box-sizing: border-box;
+      transition: border-color 0.2s ease;
+    }
+    input[type="time"]:focus, input[type="text"]:focus {
+      border-color: #0062cc; /* Xanh dương khi focus */
+      outline: none;
+    }
+
+    /* CSS cho thanh tìm kiếm: input nhân viên và button Tìm kiếm */
+    .search-bar input[type="text"] {
+      width: 200px;
+      border: 1px solid #ccc;
+      padding: 6px 8px;
+      border-radius: 4px;
+      margin-left: 8px;
+      font-size: 14px;
+      transition: border-color 0.2s ease;
+    }
+    .search-bar input[type="text"]:focus {
+      border-color: #0062cc;
+      outline: none;
+    }
+    .btn-search {
+      background-color: #007bff; /* Xanh dương */
+      color: #fff;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      margin-left: 8px;
+      transition: background-color 0.2s ease;
+    }
+    .btn-search:hover {
+      background-color: #0069d9;
+    }
+
+    /* CSS cho thanh Lọc tháng (input date) */
+    input[type="date"] {
+      border: 1px solid #ccc;
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-size: 14px;
+      transition: border-color 0.2s ease;
+    }
+    input[type="date"]:focus {
+      border-color: #0062cc;
+      outline: none;
+    }

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Danh sách Check-in/Check-out</title>
+    <link rel="stylesheet" href="/css/index.css" />
+    <link rel="stylesheet" href="/css/header.css" />
+</head>
+<body>
+
+<div class="container">
+   <div id="header"></div>
+    <div class="calendar-header">
+    <label for="year-select">Năm:</label>
+    <select id="year-select"></select>
+    <label for="month-select">Tháng:</label>
+    <select id="month-select"></select>
+    <h2 id="calendar-title">BẢNG CHẤM CÔNG THÁNG</h2>
+  </div>
+    <div class="calendar" id="calendar">
+      <!-- Days will be inserted here -->
+    </div>
+</div>
+
+<!-- Modal Update Attendance -->
+<div id="updateModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <span id="closeModal" class="close">&times;</span>
+    <h3>Cập nhật chấm công</h3>
+    <form id="updateForm">
+      
+      <!-- Nhóm lựa chọn nghỉ phép -->
+      <div style="margin-bottom:15px;">
+        <label><input type="radio" name="note" value="Leave" /> Nghỉ phép</label><br>
+        <label><input type="radio" name="note" value="Absent" /> Nghỉ không phép</label>
+      </div>
+      <button type="submit">Lưu</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const statusRadios = document.getElementsByName("note");
+    const timeInputs = document.getElementById("timeInputs");
+
+    statusRadios.forEach(radio => {
+      radio.addEventListener("change", () => {
+        if (radio.value === "Normal" && radio.checked) {
+          timeInputs.style.display = "block";
+        } else if (radio.checked) {
+          timeInputs.style.display = "none";
+        }
+      });
+    });
+
+    // Mặc định hiển thị đúng trạng thái khi load lại modal
+    const checkedRadio = document.querySelector('input[name="note"]:checked');
+    if (checkedRadio?.value !== "Normal") {
+      timeInputs.style.display = "none";
+    }
+  });
+</script>
+
+<script src="/js/header.js"></script>
+<script src="/js/index.js"></script>
+<!-- <script src="/js/update_admin.js"></script> -->
+
+</body>
+</html>

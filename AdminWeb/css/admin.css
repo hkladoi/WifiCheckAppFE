@@ -1,0 +1,263 @@
+/* ==== Phần chung: Reset và body ==== */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f2f4f8;
+}
+
+/* ==== Phần filter / tìm kiếm ==== */
+.header-call {
+  background-color: #ffffff;
+  border-bottom: 1px solid #ddd;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.search-bar label {
+  font-size: 14px;
+}
+
+.search-bar input,
+.search-bar select,
+.search-bar button {
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.search-bar input,
+.search-bar select {
+  border: 1px solid #ccc;
+}
+
+.search-bar button {
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+.btn-search {
+  background-color: #007bff;
+}
+
+.btn-search:hover {
+  background-color: #0056b3;
+}
+
+.btn-export {
+  background-color: #28a745;
+}
+
+/* css cho button thay đổi */
+.btn-change {
+  background-color: #ff9800;     /* Màu cam nổi bật */
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-left: 8px; /* Cách nút trước một khoảng */
+}
+
+.btn-change:hover {
+  background-color: #fb8c00;     /* Màu hover đậm hơn một chút */
+}
+
+.btn-export:hover {
+  background-color: #218838;
+}
+
+/* ==== Phần bảng ==== */
+.table-container {
+  padding: 24px;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  border-radius: 6px;
+}
+
+/* Chú ý: Để bo tròn bảng, chúng ta thường thêm border-radius cho <table> 
+   nhưng cần thận trọng: một số trình duyệt sẽ không bo tròn 4 góc nếu thẻ <thead> hoặc <tbody> che hết 
+   (nếu bạn gặp vấn đề, hãy cân nhắc bo tròn <th> ở góc hoặc dùng thêm wrapper). */
+
+th, td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+}
+
+thead {
+  background-color: #e7f1ff;
+  font-weight: bold;
+  color: #333;
+}
+
+/* Khi màn hình nhỏ hơn 768px, thu nhỏ font bảng và xếp cột filter theo cột */
+@media (max-width: 768px) {
+  .search-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  table {
+    font-size: 12px;
+  }
+}
+
+/* ==== Phần popup ==== */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.popup-content {
+  background: #fff;
+  padding: 24px 20px;
+  border-radius: 12px;
+  width: 320px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  animation: scaleIn 0.3s ease;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.popup-content h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 18px;
+  color: #333;
+}
+
+.popup-content p {
+  margin: 8px 0;
+  color: #555;
+  font-size: 14px;
+}
+
+.popup-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.popup-buttons button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+#confirm-btn {
+  background-color: #28a745;
+  color: white;
+}
+
+#confirm-btn:hover {
+  background-color: #218838;
+  transform: scale(1.03);
+}
+
+#cancel-btn {
+  background-color: #dc3545;
+  color: white;
+}
+
+#cancel-btn:hover {
+  background-color: #c82333;
+  transform: scale(1.03);
+}
+
+.hidden {
+  display: none;
+}
+
+/* ==== Animation ==== */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ==== Các nút hành động trong table (approve, reject, adjust) ==== */
+.approve-btn,
+.reject-btn,
+.adjust-btn {
+  padding: 6px 12px;
+  margin: 4px 4px 0 0;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.approve-btn {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.approve-btn:hover {
+  background-color: #a0c252;
+  transform: scale(1.05);
+}
+
+.adjust-btn {
+  background-color: #cfcc1f;
+  color: white;
+}
+
+.adjust-btn:hover {
+  background-color: #ccc01b;
+  transform: scale(1.05);
+}
+
+.reject-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+.reject-btn:hover {
+  background-color: #d32f2f;
+  transform: scale(1.05);
+}

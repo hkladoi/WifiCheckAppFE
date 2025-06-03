@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Điều chỉnh chấm công</title>
+  <!-- Dùng chung CSS của admin và header -->
+  <link rel="stylesheet" href="/css/header.css" />
+  <link rel="stylesheet" href="/css/time_zone.css"/>
+  <link rel="stylesheet" href="/css/admin.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="/js/header.js" defer></script>
+  <script src="/js/change_timezone.js" defer></script>
+
+</head>
+<body>
+  <!-- Load header động -->
+<div class="navbar">
+  <div class="menu">
+    <a href="/html/index.html">Bảng công</a>
+    <a href="/html/admin.html" class="active">Quản trị</a>
+  </div>
+  <div id="user-dropdown">
+    <span id="user-name"></span>
+    <div id="dropdown-menu">
+      <a href="/html/login.html" class="active" id="logout">Đăng xuất</a>
+    </div>
+  </div>
+</div>
+
+  <!-- Scope toàn bộ admin nếu bạn có .admin-page prefix -->
+  <div class="admin-page">
+    <!-- Lọc tháng giống .header-call của admin -->
+   <div class="header-call">
+  <div class="search-bar">
+    <label for="date">Ngày:</label>
+    <input id="date" type="date" />
+<!-- 
+    <button class="btn-search" id="load-data">Tải dữ liệu</button> -->
+
+        <input id="search-name" type="text" placeholder="Nhân viên" />
+    <button class="btn-search" id="search-button">Tìm kiếm</button>
+  </div>
+</div>
+
+    <!-- Bảng điều chỉnh chấm công, dùng .table-container của admin -->
+    <div class="table-container">
+      <form id="adjust-form">
+        <table>
+          <thead>
+            <tr>
+              <th>STT</th>
+              <th>Tên nhân viên</th>
+              <th>Check-in sáng</th>
+              <th>Check-out sáng</th>
+              <th>Check-in chiều</th>
+              <th>Check-out chiều</th>
+              <th>Lý do thay đổi</th>
+              <th>Hành động</th>
+            </tr>
+          </thead>
+          <tbody id="days-body">
+            <!-- JS sẽ render rows ở đây -->
+          </tbody>
+        </table>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

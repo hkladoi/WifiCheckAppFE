@@ -1,0 +1,223 @@
+ body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f2f4f8;
+    }
+
+    /* Thanh Header */
+    .header {
+      background-color: #ffffff;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 24px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .header-left .menu-item {
+      font-weight: bold;
+      color: #333;
+      text-decoration: none;
+      position: relative;
+      padding: 6px 8px;
+    }
+
+    .header-left .menu-item.active::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 8px;
+      right: 8px;
+      height: 2px;
+      background-color: #007bff;
+      border-radius: 1px;
+    }
+
+    /* Phần chọn năm - tháng */
+    .calendar-header {
+      padding: 20px 24px 0;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    #calendar-title {
+      font-size: 20px;
+      margin: 0;
+      font-weight: bold;
+    }
+
+    select {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+
+    /* Phần lưới lịch */
+    #calendar {
+      padding: 0 24px 40px;
+    }
+
+    .calendar-grid-inner {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .calendar-cell {
+      min-height: 90px;
+      background: #fff;
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 0.95rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    .calendar-cell.header {
+      background: #007bff;
+      color: white;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .calendar-cell.day {
+      color: #2c3e50;
+    }
+
+    .calendar-cell.day strong {
+      font-size: 1.1rem;
+      color: #000;
+    }
+
+    .calendar-cell.day .checkin {
+      font-size: 0.85rem;
+      color: #27ae60;
+    }
+
+    .calendar-cell.day .late {
+      font-size: 0.85rem;
+      color: #e74c3c;
+    }
+
+    .calendar-cell.empty {
+      background-color: transparent;
+      box-shadow: none;
+    }
+
+    @media (max-width: 768px) {
+      .calendar-grid-inner {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+.calendar-cell.sunday {
+  background-color: #f0f0f0;    
+  color: #999;
+  font-style: italic;
+}
+
+/* Nền mờ cho modal */
+.modal {
+  position: fixed;
+  z-index: 999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Nội dung modal */
+.modal-content {
+  background-color: #fff;
+  padding: 20px 30px;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+  position: relative;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Nút đóng */
+.close {
+  position: absolute;
+  right: 15px;
+  top: 10px;
+  font-size: 24px;
+  cursor: pointer;
+  color: #aaa;
+}
+.close:hover {
+  color: #000;
+}
+
+/* Tiêu đề */
+.modal-content h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 20px;
+  text-align: center;
+}
+
+/* Label và input */
+form label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+form input[type="text"] {
+  width: 100%;
+  padding: 8px 10px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+/* Nút submit */
+form button[type="submit"] {
+  width: 100%;
+  padding: 10px;
+  margin-top: 15px;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
+form button[type="submit"]:hover {
+  background-color: #125ea8;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
+.leave-note {
+  color: green;
+  font-weight: bold;
+}
+.absent-note {
+  color: red;
+  font-weight: bold;
+}
