@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -73,8 +74,8 @@ namespace WifiCheckApp_API.Controllers
             if (user == null)
                 return Unauthorized("Tài khoản không tồn tại hoặc đã bị khóa.");
 
-            // 2. So sánh password (giả sử bạn lưu plain text. Nếu có mã hóa bcrypt, bạn cần verify)
-            if (user.Password != request.Password)
+            // 2. So sánh password
+            if (!VerifyPassword(request.Password, user.Password))
                 return Unauthorized("Mật khẩu không đúng.");
 
             // 3. Lấy role name
