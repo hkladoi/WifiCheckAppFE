@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
     errorMessage.textContent = ""; // Xóa lỗi cũ
 
     try {
-      const response = await fetch("https://localhost:5125/api/Authen/login", {
+      const response = await fetch("https://vinashootapi.live/WebApi/api/Authen/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

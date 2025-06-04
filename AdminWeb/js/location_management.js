@@ -1,7 +1,7 @@
 // location_management.js
 class LocationManager {
     constructor() {
-        this.apiBaseUrl = 'https://localhost:5125/api/Gps';
+        this.apiBaseUrl = 'https://vinashootapi.live/WebApi/api/Gps';
         this.locationList = [];
         this.init();
     }

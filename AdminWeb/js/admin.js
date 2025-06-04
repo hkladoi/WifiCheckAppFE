@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function () {
     e.preventDefault();
     localStorage.removeItem('token');
     localStorage.removeItem('userName');
-    window.location.href = '/html/login.html';
+    window.location.href = 'login.html';
   });
 
   // Load lại tên user từ localStorage (nếu có) để hiển thị
