@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản lý Vị trí</title>
+  <!-- Dùng chung CSS của admin và header -->
+  <link rel="stylesheet" href="/css/header.css" />
+  <link rel="stylesheet" href="/css/time_zone.css" />
+  <link rel="stylesheet" href="/css/admin.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="/js/header.js" defer></script>
+  <script src="/js/location_management.js" defer></script>
+
+  <style>
+    .location-container {
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .location-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #eee;
+    }
+
+    .location-title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .add-location-btn {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+
+    .add-location-btn:hover {
+      background: #45a049;
+    }
+
+    .location-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    .location-table th,
+    .location-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .location-table th {
+      background-color: #f5f5f5;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .location-table tr:hover {
+      background-color: #f9f9f9;
+    }
+
+    .loading-spinner {
+      display: none;
+      text-align: center;
+      padding: 40px;
+      font-size: 16px;
+      color: #666;
+    }
+
+    .error-message {
+      display: none;
+      background: #f8d7da;
+      color: #721c24;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      border: 1px solid #f5c6cb;
+    }
+
+    .success-message {
+      display: none;
+      background: #d4edda;
+      color: #155724;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      border: 1px solid #c3e6cb;
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+      background-color: white;
+      margin: 10% auto;
+      padding: 30px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 500px;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      position: absolute;
+      top: 15px;
+      right: 20px;
+    }
+
+    .close:hover {
+      color: #000;
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #4CAF50;
+      box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+    }
+
+    .form-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 30px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+
+    .btn-primary {
+      background: #4CAF50;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #45a049;
+    }
+
+    .btn-primary:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+      font-style: italic;
+    }
+
+    /* GPS Help Styles */
+    .gps-help {
+      margin-top: 10px;
+    }
+
+    .help-dropdown {
+      margin-top: 8px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .help-btn {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .help-btn:hover {
+      background: #e9ecef;
+      border-color: #adb5bd;
+    }
+
+    .help-btn.active {
+      background: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+
+    .help-content {
+      display: none;
+      margin-top: 10px;
+      animation: slideDown 0.3s ease-out;
+    }
+
+    .help-content.show {
+      display: block;
+    }
+
+    .help-box {
+      background: white;
+      border: 1px solid #b8daff;
+      border-radius: 6px;
+      padding: 15px;
+      color: #004085;
+    }
+
+    .help-box strong {
+      color: #0056b3;
+      font-size: 14px;
+    }
+
+    .help-box ol,
+    .help-box ul {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+
+    .help-box li {
+      margin: 5px 0;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .help-box code {
+      background: #e7f3ff;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #0056b3;
+    }
+
+    .coordinate-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .example-box {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      padding: 10px;
+      margin-top: 8px;
+      font-size: 13px;
+      color: #495057;
+    }
+
+    .btn-get-location {
+      background: #17a2b8;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 10px;
+      margin-right: 20px;
+      display: inline-flex;
+    }
+
+    .btn-get-location:hover {
+      background: #138496;
+      transform: translateY(-1px);
+    }
+
+    .btn-get-location:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .location-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .location-status {
+      font-size: 13px;
+      padding: 5px 0;
+      color: #666;
+      font-style: italic;
+    }
+
+    .location-status.loading {
+      color: #007bff;
+    }
+
+    .location-status.success {
+      color: #28a745;
+    }
+
+    .location-status.error {
+      color: #dc3545;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Load header động -->
+  <div class="navbar">
+    <div class="menu">
+      <a href="/html/index.html">Bảng công</a>
+      <a href="/html/admin.html" class="active">Quản trị</a>
+    </div>
+    <div id="user-dropdown">
+      <span id="user-name"></span>
+      <div id="dropdown-menu">
+        <a href="/html/login.html" class="active" id="logout">Đăng xuất</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="location-container">
+    <div class="location-header">
+      <h1 class="location-title">Quản lý Vị trí</h1>
+      <button class="add-location-btn" id="addLocationBtn">
+        <i class="fas fa-plus"></i> Thêm Vị trí
+      </button>
+    </div>
+
+    <!-- Messages -->
+    <div id="errorMessage" class="error-message"></div>
+    <div id="successMessage" class="success-message"></div>
+
+    <!-- Loading -->
+    <div id="loadingSpinner" class="loading-spinner">
+      Đang tải dữ liệu...
+    </div>
+
+    <!-- Location Table -->
+    <div id="locationTableContainer">
+      <table class="location-table" id="locationTable">
+        <thead>
+          <tr>
+            <th>STT</th>
+            <th>Tên vị trí</th>
+            <th>Kinh độ</th>
+            <th>Vĩ độ</th>
+            <th>Bán kính</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="locationTableBody">
+          <!-- Data will be loaded here -->
+        </tbody>
+      </table>
+      <div id="noDataMessage" class="no-data" style="display: none;">
+        Chưa có dữ liệu Location nào
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Location Modal -->
+  <div id="addLocationModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeModal">&times;</span>
+      <h2 class="modal-title" id="titleModal">Thêm Vị trí mới</h2>
+
+      <form id="addLocationForm">
+        <div class="form-group">
+          <label for="locationName">Tên Vị trí *</label>
+          <input type="text" id="locationName" name="locationName" required placeholder="Nhập tên vị trí...">
+        </div>
+
+        <div class="coordinate-inputs">
+          <div class="form-group">
+            <label for="latitude">Vĩ độ *</label>
+            <input type="number" id="latitude" name="latitude" required step="any" min="-90" max="90"
+              placeholder="21.0285">
+            <small style="color: #666; font-size: 12px;">
+              Từ -90 đến 90
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="longitude">Kinh độ *</label>
+            <input type="number" id="longitude" name="longitude" required step="any" min="-180" max="180"
+              placeholder="105.8542">
+            <small style="color: #666; font-size: 12px;">
+              Từ -180 đến 180
+            </small>
+          </div>
+        </div>
+
+        <!-- Thêm nút lấy vị trí hiện tại -->
+        <div class="form-group">
+          <button type="button" class="btn-get-location" id="getCurrentLocationBtn">
+            📍 Lấy vị trí hiện tại
+          </button>
+          <span id="locationStatus" class="location-status"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="radius">Bán kính (mét) *</label>
+          <input type="number" id="radius" name="radius" required min="1" step="1" placeholder="100">
+          <small style="color: #666; font-size: 12px;">
+            Bán kính cho phép chấm công (tính bằng mét)
+          </small>
+        </div>
+
+        <div class="gps-help">
+          <span style="color: #007bff; font-size: 13px; font-weight: 500;">
+            📍 Hướng dẫn lấy tọa độ GPS:
+          </span>
+          <div class="help-dropdown">
+            <button type="button" class="help-btn" data-target="google-maps-help">
+              🗺️ Google Maps
+            </button>
+            <button type="button" class="help-btn" data-target="mobile-help">
+              📱 Điện thoại
+            </button>
+          </div>
+
+          <div id="google-maps-help" class="help-content">
+            <div class="help-box">
+              <strong>Trên Google Maps:</strong>
+              <ol>
+                <li>Mở <strong>Google Maps</strong> trên trình duyệt</li>
+                <li>Tìm kiếm hoặc nhấp vào vị trí bạn muốn</li>
+                <li>Nhấp chuột phải vào vị trí đó</li>
+                <li>Chọn tọa độ đầu tiên trong menu (VD: <code>21.0285, 105.8542</code>)</li>
+                <li>Tọa độ sẽ được sao chép vào clipboard</li>
+              </ol>
+              <div class="example-box">
+                <strong>Ví dụ:</strong> Hà Nội có tọa độ khoảng <code>21.0285, 105.8542</code>
+              </div>
+            </div>
+          </div>
+
+          <div id="mobile-help" class="help-content">
+            <div class="help-box">
+              <strong>Trên điện thoại:</strong>
+              <ul>
+                <li><strong>iPhone:</strong> Mở app Bản đồ → Nhấn giữ vị trí → Xem tọa độ</li>
+                <li><strong>Android:</strong> Mở Google Maps → Nhấn giữ vị trí → Xem tọa độ phía dưới</li>
+                <li><strong>Ứng dụng GPS khác:</strong> Sử dụng các app như GPS Coordinates, What3Words</li>
+              </ul>
+              <div class="example-box">
+                <strong>Lưu ý:</strong> Đảm bảo GPS được bật và cho phép truy cập vị trí
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-buttons">
+          <button type="button" class="btn btn-secondary" id="cancelBtn">Hủy</button>
+          <button type="submit" class="btn btn-primary" id="submitBtn">Thêm Location</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Initialize help dropdowns
+    document.addEventListener('DOMContentLoaded', () => {
+      const helpBtns = document.querySelectorAll('.help-btn');
+      const helpContents = document.querySelectorAll('.help-content');
+
+      helpBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const target = btn.getAttribute('data-target');
+          const content = document.getElementById(target);
+          const isActive = btn.classList.contains('active');
+
+          // Hide all content and remove active class
+          helpContents.forEach(c => c.classList.remove('show'));
+          helpBtns.forEach(b => b.classList.remove('active'));
+
+          // Toggle current content
+          if (!isActive) {
+            content.classList.add('show');
+            btn.classList.add('active');
+          }
+        });
+      });
+
+      // Close help when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.gps-help')) {
+          helpContents.forEach(c => c.classList.remove('show'));
+          helpBtns.forEach(b => b.classList.remove('active'));
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>

@@ -83,8 +83,8 @@ namespace WifiCheckApp_API.Controllers
 
             var roleName = roleNameFromDb.ToLower() switch
             {
-                "Admin" => "Admin",
-                "Customer" => "Customer",
+                "admin" => "Admin",
+                "customer" => "Customer",
                 _ => roleNameFromDb.ToLower()
             };
 
@@ -148,9 +148,13 @@ namespace WifiCheckApp_API.Controllers
                 var roleName = GetRoleName(user.Role?.RoleName);
                 var fullName = user.Employee?.FullName ?? user.Username;
 
+                // Generate JWT token
+                var token = GenarateJwtToken(user.Username, roleName);
+
                 // Return response
                 return Ok(new LoginResponse
                 {
+                    //Token = token,
                     Username = user.Username,
                     Email = user.Employee?.Email ?? string.Empty,
                     Role = roleName,

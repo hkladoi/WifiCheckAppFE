@@ -8,5 +8,6 @@
         public string FullName { get; set; }
         public int? EmployeeId { get; set; }
         public int UserId { get; set; }
+        //public string Token { get; set; }
     }
 }

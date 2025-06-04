@@ -16,16 +16,16 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("UserID:", userId);
 
   // --- 1. Khi trang load, tự động lấy ngày mới nhất ---
-  fetch("https://api.hkladoi.org/WebApi/api/TimeSkip/latest-date")
-    .then(res => res.text())
-    .then(latestDate => {
-      selectedDateInput.value = latestDate;
-      loadDataForDate(latestDate, searchTerm);
-    })
-    .catch(err => {
-      console.error(err);
-      // alert("Không thể tải ngày mới nhất.");
-    });
+try {
+  // Lấy ngày hiện tại và format theo định dạng YYYY-MM-DD
+  const latestDate = new Date().toISOString().split('T')[0];
+  
+  selectedDateInput.value = latestDate;
+  loadDataForDate(latestDate, searchTerm);
+} catch (err) {
+  console.error(err);
+  // alert("Không thể lấy ngày hiện tại.");
+}
 
   // --- 2. Khi chọn ngày khác, tải lại dữ liệu ---
   selectedDateInput.addEventListener("change", () => {
@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Hàm chính để gọi API lấy dữ liệu chấm công và vẽ bảng ---
   function loadDataForDate(date, searchTerm = "") {
-    fetch(`https://api.hkladoi.org/WebApi/api/TimeSkip/by-date?date=${date}`)
+    fetch(`https://vinashootapi.live/WebApi/api/TimeSkip/by-date?date=${date}`)
       .then(res => {
         if (!res.ok) throw new Error("Lỗi khi tải dữ liệu");
         return res.json();
@@ -160,7 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
           for (const payload of payloads) {
-            const res = await fetch("https://api.hkladoi.org/WebApi/api/TimeSkip/adjust", {
+            const res = await fetch("https://vinashootapi.live/WebApi/api/TimeSkip/adjust", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(payload)

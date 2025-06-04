@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản lý WiFi</title>
+  <!-- Dùng chung CSS của admin và header -->
+  <link rel="stylesheet" href="/css/header.css" />
+  <link rel="stylesheet" href="/css/time_zone.css"/>
+  <link rel="stylesheet" href="/css/admin.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="/js/header.js" defer></script>
+  <script src="/js/wifi_management.js" defer></script>
+  
+  <style>
+    .wifi-container {
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .wifi-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #eee;
+    }
+    
+    .wifi-title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+    }
+    
+    .add-wifi-btn {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+    
+    .add-wifi-btn:hover {
+      background: #45a049;
+    }
+    
+    .wifi-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    
+    .wifi-table th,
+    .wifi-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    .wifi-table th {
+      background-color: #f5f5f5;
+      font-weight: bold;
+      color: #333;
+    }
+    
+    .wifi-table tr:hover {
+      background-color: #f9f9f9;
+    }
+    
+    .loading-spinner {
+      display: none;
+      text-align: center;
+      padding: 40px;
+      font-size: 16px;
+      color: #666;
+    }
+    
+    .error-message {
+      display: none;
+      background: #f8d7da;
+      color: #721c24;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .success-message {
+      display: none;
+      background: #d4edda;
+      color: #155724;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      border: 1px solid #c3e6cb;
+    }
+    
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+    }
+    
+    .modal-content {
+      background-color: white;
+      margin: 10% auto;
+      padding: 30px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 500px;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    
+    .close {
+      color: #aaa;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      position: absolute;
+      top: 15px;
+      right: 20px;
+    }
+    
+    .close:hover {
+      color: #000;
+    }
+    
+    .modal-title {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: #333;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #333;
+    }
+    
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    
+    .form-group textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 16px;
+      font-family: monospace;
+      box-sizing: border-box;
+      resize: vertical;
+    }
+    
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #4CAF50;
+      box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+    }
+    
+    .form-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 30px;
+    }
+    
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+    
+    .btn-primary {
+      background: #4CAF50;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background: #45a049;
+    }
+    
+    .btn-primary:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+    
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
+    
+    .no-data {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+      font-style: italic;
+    }
+    
+    /* BSSID Help Styles */
+    .bssid-help {
+      margin-top: 10px;
+    }
+    
+    .help-dropdown {
+      margin-top: 8px;
+      display: flex;
+      gap: 10px;
+    }
+    
+    .help-btn {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    .help-btn:hover {
+      background: #e9ecef;
+      border-color: #adb5bd;
+    }
+    
+    .help-btn.active {
+      background: #dc3545;
+      color: white;
+      border-color: #dc3545;
+    }
+    
+    .help-content {
+      display: none;
+      margin-top: 10px;
+      animation: slideDown 0.3s ease-out;
+    }
+    
+    .help-content.show {
+      display: block;
+    }
+    
+    .help-box {
+      background: white;
+      border: 1px solid #fed7d7;
+      border-radius: 6px;
+      padding: 15px;
+      color: #742a2a;
+    }
+    
+    .help-box strong {
+      color: #c53030;
+      font-size: 14px;
+    }
+    
+    .help-box ol {
+      margin: 10px 0;
+      padding-left: 20px;
+    }
+    
+    .help-box li {
+      margin: 5px 0;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    
+    .help-box code {
+      background: #fed7d7;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #c53030;
+    }
+    
+    .help-box em {
+      font-size: 12px;
+      color: #9f1239;
+    }
+    
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Load header động -->
+  <div class="navbar">
+    <div class="menu">
+      <a href="/html/index.html">Bảng công</a>
+      <a href="/html/admin.html" class="active">Quản trị</a>
+    </div>
+    <div id="user-dropdown">
+      <span id="user-name"></span>
+      <div id="dropdown-menu">
+        <a href="/html/login.html" class="active" id="logout">Đăng xuất</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="wifi-container">
+    <div class="wifi-header">
+      <h1 class="wifi-title">Quản lý WiFi</h1>
+      <button class="add-wifi-btn" id="addWifiBtn">
+        <i class="fas fa-plus"></i> Thêm WiFi
+      </button>
+    </div>
+    
+    <!-- Messages -->
+    <div id="errorMessage" class="error-message"></div>
+    <div id="successMessage" class="success-message"></div>
+    
+    <!-- Loading -->
+    <div id="loadingSpinner" class="loading-spinner">
+      Đang tải dữ liệu...
+    </div>
+    
+    <!-- WiFi Table -->
+    <div id="wifiTableContainer">
+      <table class="wifi-table" id="wifiTable">
+        <thead>
+          <tr>
+            <th>STT</th>
+            <th>Tên WiFi (SSID)</th>
+            <th>Danh sách BSSID</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="wifiTableBody">
+          <!-- Data will be loaded here -->
+        </tbody>
+      </table>
+      <div id="noDataMessage" class="no-data" style="display: none;">
+        Chưa có dữ liệu WiFi nào
+      </div>
+    </div>
+  </div>
+
+  <!-- Add WiFi Modal -->
+  <div id="addWifiModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeModal">&times;</span>
+      <h2 class="modal-title" id="titleModal" name="titleModal">Thêm WiFi mới</h2>
+
+      <form id="addWifiForm">
+        <div class="form-group">
+          <label for="wifiName">Tên WiFi (SSID) *</label>
+          <input type="text" id="wifiName" name="wifiName" required 
+                 placeholder="Nhập tên WiFi...">
+        </div>
+        
+        <div class="form-group">
+          <label for="bssidList">Danh sách BSSID *</label>
+          <textarea id="bssidList" name="bssidList" required 
+                    placeholder="Nhập các BSSID, mỗi BSSID trên một dòng:&#10;AA:BB:CC:DD:EE:FF&#10;11:22:33:44:55:66&#10;..."
+                    rows="5"></textarea>
+          <small style="color: #666; font-size: 12px;">
+            Mỗi BSSID trên một dòng riêng biệt
+          </small>
+          
+          <div class="bssid-help">
+            <span style="color: #dc3545; font-size: 13px; font-weight: 500;">
+              📋 Hướng dẫn lấy BSSID:
+            </span>
+            <div class="help-dropdown">
+              <button type="button" class="help-btn" data-target="windows-help">
+                🪟 Windows
+              </button>
+              <button type="button" class="help-btn" data-target="macos-help">
+                🍎 macOS
+              </button>
+            </div>
+            
+            <div id="windows-help" class="help-content">
+              <div class="help-box">
+                <strong>Trên Windows:</strong>
+                <ol>
+                  <li>Mở <strong>Windows PowerShell</strong></li>
+                  <li>Gõ lệnh: <code>netsh wlan show networks mode=bssid | Select-String -Context 0,20 "SSID\s+\d+\s+:\s+"Tên WiFi"</code></li>
+                  <li>Tìm dòng <strong>"BSSID"</strong> hoặc <strong>"MAC Address"</strong></li>
+                </ol>
+                <p><strong>Hoặc sử dụng WiFi Analyzer app từ Microsoft Store</strong></p>
+              </div>
+            </div>
+            
+            <div id="macos-help" class="help-content">
+              <div class="help-box">
+                <strong>Trên macOS:</strong>
+                <ol>
+                  <li>Giữ phím <strong>Option</strong> và click vào biểu tượng WiFi</li>
+                  <li>Chọn <strong>"Open Wireless Diagnostics"</strong></li>
+                  <li>Chọn <strong>"Create Diagnostics Report"</strong></li>
+                  <li>Tìm BSSID của wifi trong file vừa được tạo</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-buttons">
+          <button type="button" class="btn btn-secondary" id="cancelBtn">Hủy</button>
+          <button type="submit" class="btn btn-primary" id="submitBtn">Thêm WiFi</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</body>
+</html>

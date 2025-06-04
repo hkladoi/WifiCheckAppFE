@@ -32,8 +32,8 @@ const currentPath = window.location.pathname;
             window.location.href = "/html/login.html";
           });
 
-          // Ẩn mục "Quản trị" nếu không phải admin
-          if (role !== "admin") {
+          // Ẩn mục "Quản trị" nếu không phải Admin
+          if (role !== "Admin") {
             const adminLink = document.querySelector('a[href="/html/admin.html"]');
             if (adminLink) {
               adminLink.style.display = "none";

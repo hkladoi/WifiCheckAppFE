@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // === 4. Đổ dữ liệu "Loại công" (leave-types) vào select ===
-  fetch('https://api.hkladoi.org/WebApi/api/TimeSkip/leave-types')
+  fetch('https://vinashootapi.live/WebApi/api/TimeSkip/leave-types')
     .then(response => {
       if (!response.ok) throw new Error('Lỗi khi tải loại công');
       return response.json();
@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Gọi API summary
-    fetch(`https://api.hkladoi.org/WebApi/api/TimeSkip/summary?month=${selectedMonth}`)
+    fetch(`https://vinashootapi.live/WebApi/api/TimeSkip/summary?month=${selectedMonth}`)
       .then(response => {
         if (!response.ok) throw new Error('Lỗi khi gọi API summary');
         return response.json();
@@ -226,7 +226,7 @@ document.addEventListener('DOMContentLoaded', function () {
           return;
         }
 
-        fetch('https://api.hkladoi.org/WebApi/api/TimeSkip/convert-unpaid', {
+        fetch('https://vinashootapi.live/WebApi/api/TimeSkip/convert-unpaid', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -255,7 +255,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (confirmBtn) {
     confirmBtn.addEventListener('click', () => {
       const selectedMonth = monthInput.value;
-      fetch('https://api.hkladoi.org/WebApi/api/TimeSkip/convert-unpaid', {
+      fetch('https://vinashootapi.live/WebApi/api/TimeSkip/convert-unpaid', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -292,7 +292,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const nameFilter = nameInput.value.trim().toLowerCase();
     const selectedLeaveType = leaveTypeSelect.value;
 
-    fetch(`https://api.hkladoi.org/WebApi/api/TimeSkip/summary?month=${selectedMonth}`)
+    fetch(`https://vinashootapi.live/WebApi/api/TimeSkip/summary?month=${selectedMonth}`)
       .then(response => {
         if (!response.ok) throw new Error('Lỗi khi gọi API summary');
         return response.json();

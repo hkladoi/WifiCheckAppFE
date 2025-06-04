@@ -69,7 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function generateCalendar(year, month) {
     calendar.innerHTML = "";
 
-    const apiUrl = `https://api.hkladoi.org/WebApi/api/TimeSkip/attendances/summary-employee?employeeId=${employeeId}&month=${month + 1}&year=${year}`;
+    const apiUrl = `https://vinashootapi.live/WebApi/api/TimeSkip/attendances/summary-employee?employeeId=${employeeId}&month=${month + 1}&year=${year}`;
     let attendanceData = [];
     try {
       const response = await fetch(apiUrl, { headers: { "Authorization": `Bearer ${token}` } });
@@ -191,7 +191,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     try {
-      const res = await fetch(`https://api.hkladoi.org/WebApi/api/TimeSkip/submit-leave`, {
+      const res = await fetch(`https://vinashootapi.live/WebApi/api/TimeSkip/submit-leave`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

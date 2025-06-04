@@ -601,7 +601,7 @@ namespace WifiCheckApp_API.Controllers
                 WorkDate = DateOnly.FromDateTime(request.WorkDate),
                 Notes = request.Notes,      // dùng lại Note để hiển thị "Nghỉ phép"/"Nghỉ không lương"
                 LeaveType = leaveType,
-                Status ="Confirm"
+                Status = "Confirm"
             };
 
             _context.Attendances.Add(attendance);
@@ -649,7 +649,8 @@ namespace WifiCheckApp_API.Controllers
 
             var employees = _context.Employees
                 .Where(e => e.IsActive == true)
-                .Select(e => new {
+                .Select(e => new
+                {
                     e.EmployeeId,
                     e.FullName
                 }).ToList();
@@ -789,7 +790,5 @@ namespace WifiCheckApp_API.Controllers
                 return Ok(new { message = "Tạo mới thành công", newAttendanceId = newAttendance.AttendanceId });
             }
         }
-
-
     }
 }
