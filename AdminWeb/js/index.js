@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("employeeId không hợp lệ hoặc chưa được lưu trong localStorage");
     alert("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
     return;
-  }
+}
 
   let selectedYear, selectedMonth, selectedDate;
 

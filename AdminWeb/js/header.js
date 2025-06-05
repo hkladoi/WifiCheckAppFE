@@ -1,7 +1,7 @@
 const currentPath = window.location.pathname;
 
   // Chỉ kiểm tra đăng nhập và load header nếu không phải trang login
-  if (currentPath !== "login.html") {
+  if (!currentPath.includes("login.html")) {
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("role");
 
@@ -32,6 +32,7 @@ const currentPath = window.location.pathname;
             window.location.href = "login.html";
           });
 
+          console.log(role);
           // Ẩn mục "Quản trị" nếu không phải Admin
           if (role !== "Admin") {
             const adminLink = document.querySelector('a[href="admin.html"]');
