@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -11,84 +12,80 @@
   <link rel="stylesheet" href="css/admin.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
+
 <body>
   <!-- Wrapper tổng, để có thể căn chỉnh padding-top nếu header-fixed -->
-  <div class="navbar">
-  <div class="menu">
-    <a href="index.html">Bảng công</a>
-    <a href="admin.html" class="active">Quản trị</a>
+  <div class="container">
+    <div id="header"></div>
   </div>
-  <div id="user-dropdown">
-    <span id="user-name"></span>
-    <div id="dropdown-menu">
-      <a href="login.html" class="active" id="logout">Đăng xuất</a>
+
+  <!-- === Phần filter tìm kiếm (matching với CSS .header-call) === -->
+  <div class="header-call">
+    <div class="search-bar">
+      <label for="month">Tháng:</label>
+      <input id="month" type="month" />
+
+      <label for="type">Loại công:</label>
+      <select id="type"></select>
+
+      <input id="search-name" type="text" placeholder="Nhân viên" />
+
+      <button class="btn-search" id="search-button">Tìm kiếm</button>
+      <button class="btn-export" id="export-btn">Export</button>
+      <button class="btn-change" id="change_button">Điều chỉnh chấm công</button>
+      <a href="wifi_management.html"><button class="btn-change" id="add-button" style="background-color: #007bff;">Thêm
+          wifi chấm công</button></a>
+      <a href="location_management.html"><button class="btn-change" id="add-button"
+          style="background-color: #007bff;">Thêm vị trí chấm công</button></a>
     </div>
   </div>
-</div>
 
-    <!-- === Phần filter tìm kiếm (matching với CSS .header-call) === -->
-    <div class="header-call">
-      <div class="search-bar">
-        <label for="month">Tháng:</label>
-        <input id="month" type="month" />
+  <!-- === Bảng công (matching với CSS .table-container) === -->
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Mã Nhân Viên</th>
+          <th>Họ Và Tên</th>
+          <th>Tổng công làm việc trong tháng</th>
+          <th>Nghỉ có phép</th>
+          <th>Nghỉ không phép</th>
+          <th>Tổng số buổi đi muộn</th>
+          <th>Đơn đang chờ duyệt</th>
+          <th>Tổng thời gian đi muộn</th>
+          <th>Duyệt đơn</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        <!-- Các dòng dữ liệu sẽ được JS đổ vào đây -->
+      </tbody>
+    </table>
+  </div>
 
-        <label for="type">Loại công:</label>
-        <select id="type"></select>
+  <!-- === Popup confirm (matching với CSS .popup-overlay, .popup-content) === -->
+  <div id="popup" class="popup-overlay hidden">
+    <div class="popup-content">
+      <h3>Xác nhận chuyển trạng thái đơn</h3>
+      <p><strong>Mã nhân viên:</strong> <span id="popup-employeeId"></span></p>
+      <p><strong>Số đơn đang chờ duyệt:</strong> <span id="popup-paid"></span></p>
 
-        <input id="search-name" type="text" placeholder="Nhân viên" />
-
-        <button class="btn-search" id="search-button">Tìm kiếm</button>
-        <button class="btn-export" id="export-btn">Export</button>
-        <button class="btn-change" id="change_button">Điều chỉnh chấm công</button>
-        <a href="wifi_management.html"><button class="btn-change" id="add-button" style="background-color: #007bff;">Thêm wifi chấm công</button></a>
-        <a href="location_management.html"><button class="btn-change" id="add-button" style="background-color: #007bff;">Thêm vị trí chấm công</button></a>
+      <div class="popup-buttons">
+        <button id="confirm-btn">Đồng ý</button>
+        <button id="cancel-btn">Đóng</button>
       </div>
     </div>
-
-    <!-- === Bảng công (matching với CSS .table-container) === -->
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Mã Nhân Viên</th>
-            <th>Họ Và Tên</th>
-            <th>Tổng công làm việc trong tháng</th>
-            <th>Nghỉ có phép</th>
-            <th>Nghỉ không phép</th>
-            <th>Tổng số buổi đi muộn</th>
-            <th>Đơn đang chờ duyệt</th>
-            <th>Tổng thời gian đi muộn</th>
-            <th>Duyệt đơn</th>
-          </tr>
-        </thead>
-        <tbody id="table-body">
-          <!-- Các dòng dữ liệu sẽ được JS đổ vào đây -->
-        </tbody>
-      </table>
-    </div>
-
-    <!-- === Popup confirm (matching với CSS .popup-overlay, .popup-content) === -->
-    <div id="popup" class="popup-overlay hidden">
-      <div class="popup-content">
-        <h3>Xác nhận chuyển trạng thái đơn</h3>
-        <p><strong>Mã nhân viên:</strong> <span id="popup-employeeId"></span></p>
-        <p><strong>Số đơn đang chờ duyệt:</strong> <span id="popup-paid"></span></p>
-
-        <div class="popup-buttons">
-          <button id="confirm-btn">Đồng ý</button>
-          <button id="cancel-btn">Đóng</button>
-        </div>
-      </div>
-    </div>
+  </div>
   </div>
 
   <!-- ==== JavaScript riêng của admin page ==== -->
   <script>
-  //button chuyển trang
+    //button chuyển trang
     document.getElementById("change_button").addEventListener("click", function () {
-    window.location.href = "Change_timezone.html";
+      window.location.href = "Change_timezone.html";
     });
   </script>
+  <script src="js/header.js"></script>
   <script src="js/admin.js"></script>
 </body>
+
 </html>

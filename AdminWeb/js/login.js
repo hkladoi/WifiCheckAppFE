@@ -5,6 +5,10 @@ document.addEventListener("DOMContentLoaded", () => {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
+    const button = document.getElementById("btnLogin");
+    button.disabled = true;
+    button.textContent = "Đang đăng nhập...";
+
     const username = document.getElementById("username").value.trim();
     const password = document.getElementById("password").value.trim();
 
@@ -44,6 +48,9 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         console.warn("Không có employeeId trong phản hồi API.");
       }
+      alert("Đăng nhập thành công!");
+      button.disabled = false;
+      button.textContent = "Đăng nhập";
 
       //  Điều hướng sang trang chính
       window.location.href = "index.html";

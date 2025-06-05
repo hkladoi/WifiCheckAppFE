@@ -1,10 +1,4 @@
-// File: /js/admin.js
-
 document.addEventListener('DOMContentLoaded', function () {
-  // === 1. Lấy các phần tử (selector) theo đúng HTML hiện tại ===
-  const userName = document.getElementById('user-name');
-  const dropdownMenu = document.getElementById('dropdown-menu');
-  const logoutLink = document.getElementById('logout');
 
   const tableBody = document.getElementById('table-body');
   const monthInput = document.getElementById('month');
@@ -24,44 +18,10 @@ document.addEventListener('DOMContentLoaded', function () {
   let currentUnpaid = 0;
   let currentPending = 0;
 
-  // === 2. Thiết lập giá trị mặc định cho input tháng ===
-  // Nếu bạn muốn khởi động input tháng bằng tháng hiện tại
   const now = new Date();
   // Lấy chuỗi YYYY-MM
   monthInput.value = now.toISOString().slice(0, 7);
 
-  // === 3. Xử lý dropdown user (Admin / Logout) ===
-  userName.addEventListener('click', function (e) {
-    // Khi click vào "Admin", bật/tắt dropdown-menu
-    // Nếu đang block thì hide, ngược lại show
-    dropdownMenu.style.display = dropdownMenu.style.display === 'block' ? 'none' : 'block';
-    // Dừng nổi bọt event, tránh click ra ngoài liền tắt ngay
-    e.stopPropagation();
-  });
-
-  // Khi click ra ngoài vùng #user-dropdown, tự động ẩn dropdown-menu
-  document.addEventListener('click', function (e) {
-    const userDropdownContainer = document.getElementById('user-dropdown');
-    if (userDropdownContainer && !userDropdownContainer.contains(e.target)) {
-      dropdownMenu.style.display = 'none';
-    }
-  });
-
-  // Xử lý logout: xóa token, chuyển về login
-  logoutLink.addEventListener('click', function (e) {
-    e.preventDefault();
-    localStorage.removeItem('token');
-    localStorage.removeItem('userName');
-    window.location.href = 'login.html';
-  });
-
-  // Load lại tên user từ localStorage (nếu có) để hiển thị
-  const storedName = localStorage.getItem('userName');
-  if (storedName) {
-    userName.textContent = storedName;
-  }
-
-  // === 4. Đổ dữ liệu "Loại công" (leave-types) vào select ===
   fetch('https://vinashootapi.live/WebApi/api/TimeSkip/leave-types')
     .then(response => {
       if (!response.ok) throw new Error('Lỗi khi tải loại công');
@@ -86,7 +46,6 @@ document.addEventListener('DOMContentLoaded', function () {
       alert('Không thể tải loại công. Vui lòng thử lại.');
     });
 
-  // === 5. Hàm loadData(): gọi API và render vào bảng ===
   function loadData() {
     const selectedMonth = monthInput.value; // "YYYY-MM"
     const nameFilter = nameInput.value.trim().toLowerCase();
@@ -179,7 +138,6 @@ document.addEventListener('DOMContentLoaded', function () {
     loadData();
   }
 
-  // === 6. Hàm open/close Popup và đẩy dữ liệu vào ===
   function openPopup(employeeId, paidLeave, unpaidLeave, pendingLeave) {
     currentEmpId = employeeId;
     currentPaid = Number(paidLeave);
@@ -201,9 +159,7 @@ document.addEventListener('DOMContentLoaded', function () {
     popup.classList.add('hidden');
   }
 
-  // === 7. Gắn sự kiện cho các nút Approve / Reject vừa tạo ở table ===
   function attachPopupEvents() {
-    // 7.1. Approve-buttons: mở popup
     const approveButtons = document.querySelectorAll('.approve-btn');
     approveButtons.forEach(button => {
       button.addEventListener('click', () => {
@@ -215,7 +171,6 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     });
 
-    // 7.2. Reject-buttons: gửi API ngay khi confirm người dùng
     const rejectButtons = document.querySelectorAll('.reject-btn');
     rejectButtons.forEach(button => {
       button.addEventListener('click', () => {
@@ -251,7 +206,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // === 8. Xử lý confirm/cancel trong popup ===
   if (confirmBtn) {
     confirmBtn.addEventListener('click', () => {
       const selectedMonth = monthInput.value;
@@ -284,7 +238,6 @@ document.addEventListener('DOMContentLoaded', function () {
     cancelBtn.addEventListener('click', closePopup);
   }
 
-  // === 9. Export sang Excel ===
   exportButton.addEventListener('click', exportToExcel);
 
   function exportToExcel() {

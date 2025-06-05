@@ -58,3 +58,37 @@
 .menu a:hover::after {
   width: 100%;
 }
+
+    .header {
+      background-color: #ffffff;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 24px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .header-left .menu-item {
+      font-weight: bold;
+      color: #333;
+      text-decoration: none;
+      position: relative;
+      padding: 6px 8px;
+    }
+
+    .header-left .menu-item.active::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 8px;
+      right: 8px;
+      height: 2px;
+      background-color: #007bff;
+      border-radius: 1px;
+    }
