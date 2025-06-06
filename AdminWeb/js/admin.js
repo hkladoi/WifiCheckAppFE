@@ -1,8 +1,3 @@
-// Constants
-const API_BASE_URL = 'https://vinashootapi.live/WebApi/api';
-const LEAVE_TYPES_URL = 'https://localhost:5125/api/TimeSkip/leave-types';
-const API_BASE_URL_LOCAL = 'https://localhost:5125/api';
-
 // DOM Elements
 const elements = {
   tableBody: document.getElementById('table-body'),
@@ -500,8 +495,8 @@ async function processLeaveRequests(action, employeeId, employeeName) {
   showLoading();
   try {
     const url = action === 'approve'
-      ? `${API_BASE_URL_LOCAL}/LeaveRequest/ApproveRequests`
-      : `${API_BASE_URL_LOCAL}/LeaveRequest/RejectRequests`;
+      ? `${API_BASE_URL}/LeaveRequest/ApproveRequests`
+      : `${API_BASE_URL}/LeaveRequest/RejectRequests`;
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -539,12 +534,12 @@ async function loadLeaveRequests(employeeId, employeeName) {
   try {
     // Lấy leaveTypes nếu chưa có
     if (!globalLeaveTypes.length) {
-      const res = await fetch(LEAVE_TYPES_URL);
+      const res = await fetch(`${API_BASE_URL}/TimeSkip/leave-types`);
       if (res.ok) globalLeaveTypes = await res.json();
     }
     // Luôn fill lại filter và reset về '-- Tất cả --'
     fillLeaveTypeFilter(globalLeaveTypes, '');
-    const response = await fetch(`${API_BASE_URL_LOCAL}/LeaveRequest/GetLeaveRequestByEmployeeId/${employeeId}`);
+    const response = await fetch(`${API_BASE_URL}/LeaveRequest/GetLeaveRequestByEmployeeId/${employeeId}`);
     if (!response.ok) throw new Error('Lỗi khi tải đơn nghỉ phép');
     const requests = await response.json();
     displayLeaveRequests(requests, employeeName, true);

@@ -69,7 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function generateCalendar(year, month) {
     calendar.innerHTML = "";
 
-    const apiUrl = `https://vinashootapi.live/WebApi/api/TimeSkip/attendances/summary-employee?employeeId=${employeeId}&month=${month + 1}&year=${year}`;
+    const apiUrl = `${API_BASE_URL}/TimeSkip/attendances/summary-employee?employeeId=${employeeId}&month=${month + 1}&year=${year}`;
     let attendanceData = [];
     try {
       const response = await fetch(apiUrl, { headers: { "Authorization": `Bearer ${token}` } });

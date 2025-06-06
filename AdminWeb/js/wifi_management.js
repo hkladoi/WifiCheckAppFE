@@ -1,7 +1,7 @@
 // wifi_management.js
 class WiFiManager {
     constructor() {
-        this.apiBaseUrl = 'https://vinashootapi.live/WebApi/api/Wifi';
+        this.apiBaseUrl = `${API_BASE_URL}/Wifi`;
         this.wifiList = [];
         this.init();
     }
