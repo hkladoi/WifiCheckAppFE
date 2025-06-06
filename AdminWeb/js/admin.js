@@ -1,100 +1,172 @@
-document.addEventListener('DOMContentLoaded', function () {
+// Constants
+const API_BASE_URL = 'https://vinashootapi.live/WebApi/api';
+const LEAVE_TYPES_URL = 'https://localhost:5125/api/TimeSkip/leave-types';
+const API_BASE_URL_LOCAL = 'https://localhost:5125/api';
 
-  const tableBody = document.getElementById('table-body');
-  const monthInput = document.getElementById('month');
-  const leaveTypeSelect = document.getElementById('type');
-  const nameInput = document.getElementById('search-name');
-  const exportButton = document.getElementById('export-btn');
+// DOM Elements
+const elements = {
+  tableBody: document.getElementById('table-body'),
+  monthInput: document.getElementById('month'),
+  nameInput: document.getElementById('search-name'),
+  exportButton: document.getElementById('export-btn'),
+  searchButton: document.getElementById('search-button'),
+  changeButton: document.getElementById('change_button'),
+  popup: document.getElementById('popup'),
+  popupEmployeeId: document.getElementById('popup-employeeId'),
+  popupPaid: document.getElementById('popup-paid'),
+  confirmBtn: document.getElementById('confirm-btn'),
+  cancelBtn: document.getElementById('cancel-btn'),
+  leaveRequestPopup: document.getElementById('leaveRequestPopup'),
+  closeLeaveRequestPopup: document.getElementById('closeLeaveRequestPopup'),
+  selectAllRequests: document.getElementById('selectAllRequests'),
+  approveSelectedBtn: document.getElementById('approveSelectedBtn'),
+  loading: document.getElementById('loading'),
+  errorToast: document.getElementById('error-toast'),
+  errorMessage: document.getElementById('error-message')
+};
 
-  const popup = document.getElementById('popup');
-  const popupEmployeeId = document.getElementById('popup-employeeId');
-  const popupPaid = document.getElementById('popup-paid');
-  const confirmBtn = document.getElementById('confirm-btn');
-  const cancelBtn = document.getElementById('cancel-btn');
+// State
+const state = {
+  currentEmpId: '',
+  currentPaid: 0,
+  currentUnpaid: 0,
+  currentPending: 0,
+  currentLeaveRequests: [],
+  selectedRequestIds: [],
+  isLoading: false
+};
 
-  // Biến toàn cục tạm lưu khi click vào nút "Duyệt đơn" (Approve)
-  let currentEmpId = '';
-  let currentPaid = 0;
-  let currentUnpaid = 0;
-  let currentPending = 0;
+// Lưu leaveTypes toàn cục để filter
+let globalLeaveTypes = [];
+let globalLeaveRequests = [];
 
-  const now = new Date();
-  // Lấy chuỗi YYYY-MM
-  monthInput.value = now.toISOString().slice(0, 7);
+// Utility Functions
+const showLoading = () => {
+  state.isLoading = true;
+  elements.loading.classList.remove('hidden');
+};
 
-  fetch('https://vinashootapi.live/WebApi/api/TimeSkip/leave-types')
-    .then(response => {
-      if (!response.ok) throw new Error('Lỗi khi tải loại công');
-      return response.json();
-    })
-    .then(data => {
-      // Tạo option mặc định
-      const defaultOption = document.createElement('option');
-      defaultOption.value = '';
-      defaultOption.textContent = '-- Chọn loại công --';
-      leaveTypeSelect.appendChild(defaultOption);
+const hideLoading = () => {
+  state.isLoading = false;
+  elements.loading.classList.add('hidden');
+};
 
-      data.forEach(item => {
-        const option = document.createElement('option');
-        option.value = item.value;   // ví dụ "Paid" hoặc "Unpaid"
-        option.textContent = item.text; // ví dụ "Nghỉ phép", "Nghỉ không phép"
-        leaveTypeSelect.appendChild(option);
-      });
-    })
-    .catch(error => {
-      console.error('Lỗi tải loại công:', error);
-      alert('Không thể tải loại công. Vui lòng thử lại.');
+function showToast(message, type = 'success') {
+  const toast = document.getElementById('error-toast');
+  const msg = document.getElementById('error-message');
+  if (!toast || !msg) return;
+  msg.textContent = message;
+  toast.classList.remove('hidden', 'toast-error', 'toast-success');
+  toast.classList.add(type === 'success' ? 'toast-success' : 'toast-error');
+  toast.classList.add('toast');
+  setTimeout(() => {
+    toast.classList.add('hidden');
+  }, 3000);
+  // Đóng bằng nút X
+  const closeBtn = toast.querySelector('.toast-close');
+  if (closeBtn) {
+    closeBtn.onclick = () => toast.classList.add('hidden');
+  }
+}
+
+const showError = (message) => {
+  showToast(message, 'error');
+};
+
+const formatDate = (date) => {
+  return date.toISOString().slice(0, 7);
+};
+
+const formatTime = (minutes) => {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${hours}h ${mins}m`;
+};
+
+// Định dạng ngày (dd/MM/yyyy)
+function formatDateVN(dateString) {
+  if (!dateString) return 'Không xác định';
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Không xác định';
+    return date.toLocaleDateString('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
     });
+  } catch (error) {
+    return 'Không xác định';
+  }
+}
 
-  function loadData() {
-    const selectedMonth = monthInput.value; // "YYYY-MM"
-    const nameFilter = nameInput.value.trim().toLowerCase();
-    const selectedLeaveType = leaveTypeSelect.value; // "" hoặc "Paid"/"Unpaid"
+// Định dạng ngày giờ (dd/MM/yyyy HH:mm)
+function formatDateTimeVN(dateString) {
+  if (!dateString) return 'Không xác định';
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Không xác định';
+    return date.toLocaleDateString('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }) + ' ' + date.toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+  } catch (error) {
+    return 'Không xác định';
+  }
+}
 
-    // Kiểm tra tháng bắt buộc là "YYYY-MM"
+// Hàm chuyển trạng thái sang tiếng Việt
+function getStatusText(status) {
+  if (!status) return 'Không xác định';
+  const statusMap = {
+    'pending': 'Chờ duyệt',
+    'approved': 'Đã duyệt',
+    'rejected': 'Từ chối',
+    'cancelled': 'Đã hủy'
+  };
+  return statusMap[status.toLowerCase()] || status || 'Không xác định';
+}
+
+// Hàm chuyển Loại nghỉ sang tiếng Việt
+function getLeaveTypeText(type) {
+  if (!type) return 'Không xác định';
+  if (type.toLowerCase() === 'paid') return 'có phép';
+  if (type.toLowerCase() === 'unpaid') return 'không phép';
+  return type;
+}
+
+// API Functions
+const loadData = async () => {
+  const selectedMonth = elements.monthInput.value;
+  const nameFilter = elements.nameInput.value.trim().toLowerCase();
+
     if (!selectedMonth || selectedMonth.length !== 7) {
-      tableBody.innerHTML = '<tr><td colspan="9">Vui lòng chọn tháng hợp lệ.</td></tr>';
+    elements.tableBody.innerHTML = '<tr><td colspan="9">Vui lòng chọn tháng hợp lệ.</td></tr>';
       return;
     }
 
-    // Gọi API summary
-    fetch(`https://vinashootapi.live/WebApi/api/TimeSkip/summary?month=${selectedMonth}`)
-      .then(response => {
+  showLoading();
+  try {
+    const response = await fetch(`${API_BASE_URL}/TimeSkip/summary?month=${selectedMonth}`);
         if (!response.ok) throw new Error('Lỗi khi gọi API summary');
-        return response.json();
-      })
-      .then(data => {
-        // Xóa hết nội dung cũ
-        tableBody.innerHTML = '';
+    const data = await response.json();
 
-        // Lọc theo tên và loại công (nếu có chọn)
         const filtered = data.filter(emp => {
-          const matchName = nameFilter
-            ? emp.fullName.toLowerCase().includes(nameFilter)
-            : true;
-
-          let matchLeaveType = true;
-          if (selectedLeaveType) {
-            if (selectedLeaveType === 'Paid') {
-              matchLeaveType = emp.totalPaidLeaves > 0;
-            } else if (selectedLeaveType === 'Unpaid') {
-              matchLeaveType = emp.totalUnpaidLeaves > 0;
-            }
-          }
-
-          return matchName && matchLeaveType;
+          const matchName = nameFilter ? emp.fullName.toLowerCase().includes(nameFilter) : true;
+      return matchName;
         });
 
-        // Nếu không có dữ liệu sau lọc
         if (filtered.length === 0) {
-          tableBody.innerHTML = '<tr><td colspan="9">Không tìm thấy nhân viên nào.</td></tr>';
+      elements.tableBody.innerHTML = '<tr><td colspan="9">Không tìm thấy nhân viên nào.</td></tr>';
           return;
         }
 
-        // Duyệt mảng filtered và render từng row
-        filtered.forEach(emp => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
+    elements.tableBody.innerHTML = filtered.map(emp => `
+      <tr>
             <td>${emp.employeeId || '-'}</td>
             <td>${emp.fullName}</td>
             <td>${emp.totalWorkingDays}</td>
@@ -102,215 +174,405 @@ document.addEventListener('DOMContentLoaded', function () {
             <td>${emp.totalUnpaidLeaves}</td>
             <td>${emp.totalLateSessions}</td>
             <td>${emp.totalPendingLeaves || 0}</td>
-            <td>${emp.totalLateMinutes}</td>
+        <td>${formatTime(emp.totalLateMinutes)}</td>
             <td>
+          <button class="leaveRequest-btn" data-id="${emp.employeeId}" data-name="${emp.fullName}" aria-label="Xem đơn của ${emp.fullName}">
+            <i class="fas fa-file-alt"></i>
+            Xem đơn
+          </button>
             </td>
-          `;
-          tableBody.appendChild(row);
-        });
+      </tr>
+    `).join('');
 
-        //  <td>
-        //       <button class="approve-btn" 
-        //               data-id="${emp.employeeId}" 
-        //               data-paid="${emp.totalPaidLeaves}" 
-        //               data-unpaid="${emp.totalUnpaidLeaves}" 
-        //               data-pending="${emp.totalPendingLeaves || 0}">
-        //         Duyệt đơn
-        //       </button>
-        //       <button class="reject-btn" data-id="${emp.employeeId}">
-        //         Từ chối
-        //       </button>
-        //     </td>
-
-        // Sau khi render xong, attach event cho từng nút
-        attachPopupEvents();
-      })
-      .catch(error => {
+    // Attach event listeners to the newly created buttons
+    attachLeaveRequestEvents();
+  } catch (error) {
         console.error('Lỗi load data:', error);
-        tableBody.innerHTML = '<tr><td colspan="9">Không thể tải dữ liệu.</td></tr>';
+    elements.tableBody.innerHTML = '<tr><td colspan="9">Không thể tải dữ liệu.</td></tr>';
+    showError('Không thể tải dữ liệu. Vui lòng thử lại.');
+  } finally {
+    hideLoading();
+  }
+};
+
+// Add new function to handle leave request button events
+const attachLeaveRequestEvents = () => {
+  const leaveRequestButtons = document.querySelectorAll('.leaveRequest-btn');
+  leaveRequestButtons.forEach(button => {
+    button.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const employeeId = button.getAttribute('data-id');
+      const employeeName = button.getAttribute('data-name');
+      
+      if (!employeeId) {
+        showError('Không tìm thấy thông tin nhân viên');
+        return;
+      }
+
+      // Show popup first
+      const popup = document.getElementById('leaveRequestPopup');
+      if (popup) {
+        popup.classList.remove('hidden');
+      }
+
+      // Then load the requests
+      await loadLeaveRequests(employeeId, employeeName);
+    });
+  });
+};
+
+// Hàm fill dropdown loại nghỉ trong popup
+function fillLeaveTypeFilter(leaveTypes, selectedValue = '') {
+  const filter = document.getElementById('leaveTypeFilter');
+  if (!filter) return;
+  filter.innerHTML = '<option value="">-- Tất cả --</option>';
+  leaveTypes.forEach(type => {
+    filter.innerHTML += `<option value="${type.leaveTypeId}"${String(type.leaveTypeId) === String(selectedValue) ? ' selected' : ''}>${type.leaveTypeName}</option>`;
+  });
+}
+
+// Hàm filter và hiển thị đơn theo loại nghỉ
+function filterAndDisplayLeaveRequests(leaveTypeId, employeeName) {
+  let filtered = globalLeaveRequests;
+  if (leaveTypeId) {
+    filtered = globalLeaveRequests.filter(r => String(r.leaveTypeId) === String(leaveTypeId));
+  }
+  displayLeaveRequests(filtered, employeeName, false); // false: không reset filter
+}
+
+// Sửa displayLeaveRequests để không fill lại filter nếu không cần
+function displayLeaveRequests(requests, employeeName, resetFilter = true) {
+  const leaveRequestList = document.getElementById('leaveRequestList');
+  const popupEmployeeName = document.getElementById('popupEmployeeName');
+  if (resetFilter) globalLeaveRequests = requests;
+  leaveRequestList.innerHTML = '';
+  if (popupEmployeeName) {
+    popupEmployeeName.textContent = employeeName || 'Không xác định';
+  }
+  if (!requests || requests.length === 0) {
+    leaveRequestList.innerHTML = '<div class="no-requests">Không có đơn nghỉ phép</div>';
+    return;
+  }
+  // Sắp xếp theo fromTime mới nhất
+  requests.sort((a, b) => new Date(b.fromTime) - new Date(a.fromTime));
+  requests.forEach(request => {
+    const requestItem = document.createElement('div');
+    requestItem.className = 'leave-request-item';
+    const leaveTypeRaw = request.leaveTypeName || request.leaveType;
+    requestItem.innerHTML = `
+      <div class="request-header">
+        <label class="checkbox-label">
+          <input type="checkbox" class="request-checkbox" data-request-id="${request.leaveId}">
+          <span>${request.sessionName ? `<b>Ca:</b> ${request.sessionName}` : ''}</span>
+        </label>
+      </div>
+      <div class="request-details">
+        <p><strong>Loại nghỉ:</strong> ${getLeaveTypeText(leaveTypeRaw)}</p>
+        <p><strong>Thời gian:</strong> ${formatDateTimeVN(request.fromTime)} - ${formatDateTimeVN(request.toTime)}</p>
+        <p><strong>Lý do:</strong> ${request.reason || 'Không có'}</p>
+        <p><strong>Trạng thái:</strong> ${getStatusText(request.status)}</p>
+        <p><strong>Ngày gửi đơn:</strong> ${formatDateTimeVN(request.requestedAt)}</p>
+        <p><strong>Người duyệt:</strong> ${request.processedByName || '-'}</p>
+        <p><strong>Ngày duyệt:</strong> ${request.processedAt ? formatDateTimeVN(request.processedAt) : '-'}</p>
+      </div>
+    `;
+    leaveRequestList.appendChild(requestItem);
+  });
+  attachCheckboxEvents();
+}
+
+const updateSelectedRequests = () => {
+  const checkedBoxes = document.querySelectorAll('.request-item-checkbox:checked');
+  state.selectedRequestIds = Array.from(checkedBoxes).map(checkbox => checkbox.value);
+  
+  if (elements.approveSelectedBtn) {
+    elements.approveSelectedBtn.textContent = state.selectedRequestIds.length > 0 
+      ? `Duyệt đã chọn (${state.selectedRequestIds.length})` 
+      : 'Duyệt đã chọn';
+    elements.approveSelectedBtn.disabled = state.selectedRequestIds.length === 0;
+    }
+};
+
+const approveSelectedRequests = async () => {
+  if (state.selectedRequestIds.length === 0) {
+    showError('Vui lòng chọn ít nhất một đơn để duyệt.');
+      return;
+    }
+
+  if (!confirm(`Bạn chắc chắn muốn duyệt ${state.selectedRequestIds.length} đơn đã chọn?`)) {
+      return;
+    }
+
+  showLoading();
+  try {
+    const response = await fetch(`${API_BASE_URL}/LeaveRequest/ApproveRequests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requestIds: state.selectedRequestIds,
+        isApproved: true
+      })
+    });
+
+        if (!response.ok) throw new Error('Lỗi khi duyệt đơn');
+    const result = await response.json();
+    
+        alert(result.message || 'Duyệt đơn thành công!');
+    elements.leaveRequestPopup.classList.add('hidden');
+        loadData();
+  } catch (error) {
+        console.error('Lỗi khi duyệt đơn:', error);
+    showError(`Duyệt đơn thất bại: ${error.message}`);
+  } finally {
+    hideLoading();
+  }
+};
+
+function exportToExcel() {
+  // Lấy dữ liệu bảng (bỏ cột cuối cùng 'Duyệt đơn')
+  const table = document.querySelector('table');
+  if (!table) return;
+  const rows = Array.from(table.querySelectorAll('tr'));
+  const data = rows.map(row => {
+    // Bỏ ô cuối cùng (Duyệt đơn)
+    const cells = Array.from(row.querySelectorAll('th,td'));
+    return cells.slice(0, -1).map(cell => cell.innerText);
+  });
+
+  // Tạo worksheet và workbook
+  const ws = XLSX.utils.aoa_to_sheet(data);
+
+  // Set độ rộng cột vừa với header
+  if (data.length > 0) {
+    ws['!cols'] = data[0].map((header, idx) => ({ wch: Math.max(10, String(header).length + 2) }));
+  }
+
+  // Thêm border cho tất cả các ô
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  for (let R = range.s.r; R <= range.e.r; ++R) {
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const cell_address = { c: C, r: R };
+      const cell_ref = XLSX.utils.encode_cell(cell_address);
+      if (!ws[cell_ref]) continue;
+      if (!ws[cell_ref].s) ws[cell_ref].s = {};
+      ws[cell_ref].s.border = {
+        top:    { style: 'thin', color: { rgb: '000000' } },
+        bottom: { style: 'thin', color: { rgb: '000000' } },
+        left:   { style: 'thin', color: { rgb: '000000' } },
+        right:  { style: 'thin', color: { rgb: '000000' } }
+      };
+    }
+  }
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Bảng công');
+
+  // Xuất file
+  const now = new Date();
+  const fileName = `bang-cong-${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+  }
+
+// Event Listeners
+const attachEventListeners = () => {
+  // Search and Filter
+  elements.monthInput.addEventListener('change', loadData);
+  elements.nameInput.addEventListener('input', loadData);
+  elements.searchButton.addEventListener('click', loadData);
+  elements.exportButton.addEventListener('click', exportToExcel);
+  elements.changeButton.addEventListener('click', () => {
+    window.location.href = "Change_timezone.html";
+  });
+
+  // Popup Controls
+  elements.closeLeaveRequestPopup?.addEventListener('click', () => {
+    elements.leaveRequestPopup.classList.add('hidden');
       });
+
+  elements.selectAllRequests?.addEventListener('change', (e) => {
+    const checkboxes = document.querySelectorAll('.request-item-checkbox');
+    checkboxes.forEach(checkbox => {
+      checkbox.checked = e.target.checked;
+    });
+    updateSelectedRequests();
+  });
+
+  elements.approveSelectedBtn?.addEventListener('click', approveSelectedRequests);
+
+  // Checkbox Changes
+  document.addEventListener('change', (e) => {
+    if (e.target.classList.contains('request-item-checkbox')) {
+      updateSelectedRequests();
+      const allCheckboxes = document.querySelectorAll('.request-item-checkbox');
+      const checkedCheckboxes = document.querySelectorAll('.request-item-checkbox:checked');
+      if (elements.selectAllRequests) {
+        elements.selectAllRequests.checked = allCheckboxes.length > 0 && 
+          allCheckboxes.length === checkedCheckboxes.length;
+      }
+    }
+  });
+
+  // Error Toast Close
+  document.querySelector('.toast-close')?.addEventListener('click', () => {
+    elements.errorToast.classList.add('hidden');
+  });
+};
+
+// Gắn sự kiện cho checkbox trong popup đơn nghỉ phép
+function attachCheckboxEvents() {
+  const checkboxes = document.querySelectorAll('.request-checkbox');
+  const selectAll = document.getElementById('selectAllRequests');
+  let approveBtn = document.getElementById('approveSelectedBtn');
+  let rejectBtn = document.getElementById('rejectSelectedBtn');
+
+  // Remove old event listeners by replacing node
+  const approveBtnClone = approveBtn.cloneNode(true);
+  approveBtn.parentNode.replaceChild(approveBtnClone, approveBtn);
+  approveBtn = approveBtnClone;
+  const rejectBtnClone = rejectBtn.cloneNode(true);
+  rejectBtn.parentNode.replaceChild(rejectBtnClone, rejectBtn);
+  rejectBtn = rejectBtnClone;
+
+  // Khi chọn từng đơn
+  checkboxes.forEach(cb => {
+    cb.addEventListener('change', () => {
+      const checkedCount = document.querySelectorAll('.request-checkbox:checked').length;
+      approveBtn.disabled = checkedCount === 0;
+      rejectBtn.disabled = checkedCount === 0;
+      if (checkedCount === checkboxes.length) {
+        selectAll.checked = true;
+      } else {
+        selectAll.checked = false;
+      }
+    });
+  });
+
+  // Khi chọn "Chọn tất cả"
+  if (selectAll) {
+    selectAll.addEventListener('change', () => {
+      checkboxes.forEach(cb => {
+        cb.checked = selectAll.checked;
+      });
+      approveBtn.disabled = !selectAll.checked;
+      rejectBtn.disabled = !selectAll.checked;
+    });
   }
 
-  // Gọi loadData mỗi khi thay đổi tháng / tên / loại nghỉ
-  monthInput.addEventListener('change', loadData);
-  nameInput.addEventListener('input', loadData);
-  leaveTypeSelect.addEventListener('change', loadData);
+  // Reset trạng thái nút khi mở popup
+  approveBtn.disabled = true;
+  rejectBtn.disabled = true;
 
-  // Nếu trang mới load, gọi 1 lần để hiện bảng mặc định theo tháng hiện tại
-  if (monthInput.value) {
-    loadData();
+  // Gắn event xử lý duyệt/từ chối (chỉ 1 lần)
+  if (approveBtn) {
+    approveBtn.onclick = () => {
+      const empId = window.currentLeaveEmployeeId;
+      const empName = window.currentLeaveEmployeeName;
+      processLeaveRequests('approve', empId, empName);
+    };
   }
+  if (rejectBtn) {
+    rejectBtn.onclick = () => {
+      const empId = window.currentLeaveEmployeeId;
+      const empName = window.currentLeaveEmployeeName;
+      processLeaveRequests('reject', empId, empName);
+    };
+  }
+}
 
-  function openPopup(employeeId, paidLeave, unpaidLeave, pendingLeave) {
-    currentEmpId = employeeId;
-    currentPaid = Number(paidLeave);
-    currentUnpaid = Number(unpaidLeave);
-    currentPending = Number(pendingLeave);
+// Xử lý duyệt và từ chối đơn
+function getSelectedRequestIds() {
+  return Array.from(document.querySelectorAll('.request-checkbox:checked'))
+    .map(cb => cb.getAttribute('data-request-id'))
+    .filter(Boolean);
+}
 
-    // Chỉ có popupEmployeeId và popupPaid trong HTML mới
-    if (popupEmployeeId) {
-      popupEmployeeId.textContent = employeeId;
+async function processLeaveRequests(action, employeeId, employeeName) {
+  const requestIds = getSelectedRequestIds();
+  if (!requestIds.length) {
+    showError('Vui lòng chọn ít nhất 1 đơn để xử lý!');
+    return;
+  }
+  const userId = localStorage.getItem('userId') || localStorage.getItem('employeeId') || localStorage.getItem('id');
+  if (!userId) {
+    showError('Không tìm thấy thông tin người duyệt');
+    return;
+  }
+  showLoading();
+  try {
+    const url = action === 'approve'
+      ? `${API_BASE_URL_LOCAL}/LeaveRequest/ApproveRequests`
+      : `${API_BASE_URL_LOCAL}/LeaveRequest/RejectRequests`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requestIds, processedById: userId })
+    });
+    if ([200, 201, 202, 204].includes(res.status)) {
+      // Thành công
+      await loadLeaveRequests(employeeId, employeeName);
+      showToast(action === 'approve' ? 'Duyệt đơn thành công!' : 'Từ chối đơn thành công!', 'success');
+    } else {
+      // Thất bại
+      showError('Lỗi xử lý đơn');
     }
-    if (popupPaid) {
-      popupPaid.textContent = pendingLeave;
-    }
+  } catch (err) {
+    showError('Lỗi xử lý đơn');
+  } finally {
+    hideLoading();
+  }
+}
 
+// Khi mở popup, lưu lại employeeId, employeeName để dùng lại khi duyệt/từ chối
+async function loadLeaveRequests(employeeId, employeeName) {
+  window.currentLeaveEmployeeId = employeeId;
+  window.currentLeaveEmployeeName = employeeName;
+  if (!employeeId) {
+    showError('Không tìm thấy thông tin nhân viên');
+    return;
+  }
+  // Luôn mở popup trước khi fetch dữ liệu
+    const popup = document.getElementById('leaveRequestPopup');
+  if (popup) {
     popup.classList.remove('hidden');
   }
-
-  function closePopup() {
-    popup.classList.add('hidden');
+  showLoading();
+  try {
+    // Lấy leaveTypes nếu chưa có
+    if (!globalLeaveTypes.length) {
+      const res = await fetch(LEAVE_TYPES_URL);
+      if (res.ok) globalLeaveTypes = await res.json();
+    }
+    // Luôn fill lại filter và reset về '-- Tất cả --'
+    fillLeaveTypeFilter(globalLeaveTypes, '');
+    const response = await fetch(`${API_BASE_URL_LOCAL}/LeaveRequest/GetLeaveRequestByEmployeeId/${employeeId}`);
+    if (!response.ok) throw new Error('Lỗi khi tải đơn nghỉ phép');
+    const requests = await response.json();
+    displayLeaveRequests(requests, employeeName, true);
+    // Gắn sự kiện filter (luôn reset lại khi mở popup)
+    const filter = document.getElementById('leaveTypeFilter');
+    if (filter) {
+      filter.onchange = (e) => {
+        filterAndDisplayLeaveRequests(e.target.value, employeeName);
+      };
+    }
+  } catch (error) {
+    displayLeaveRequests([], employeeName, true);
+  } finally {
+    hideLoading();
   }
+}
 
-  function attachPopupEvents() {
-    const approveButtons = document.querySelectorAll('.approve-btn');
-    approveButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        const empId = button.getAttribute('data-id');
-        const paid = button.getAttribute('data-paid');
-        const unpaid = button.getAttribute('data-unpaid');
-        const pending = button.getAttribute('data-pending');
-        openPopup(empId, paid, unpaid, pending);
-      });
-    });
+// Initialize
+const init = () => {
+  // Set current month
+  elements.monthInput.value = formatDate(new Date());
+  
+  // Load initial data
+  loadData();
+  
+  // Attach event listeners
+  attachEventListeners();
+};
 
-    const rejectButtons = document.querySelectorAll('.reject-btn');
-    rejectButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        const empId = button.getAttribute('data-id');
-        const selectedMonth = monthInput.value;
-
-        if (!confirm(`Bạn chắc chắn muốn từ chối đơn của nhân viên ${empId}?`)) {
-          return;
-        }
-
-        fetch('https://vinashootapi.live/WebApi/api/TimeSkip/convert-unpaid', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            employeeIds: [empId],
-            month: selectedMonth,
-            isApproved: false
-          })
-        })
-          .then(response => {
-            if (!response.ok) throw new Error('Lỗi khi từ chối đơn');
-            return response.json();
-          })
-          .then(result => {
-            alert(result.message || 'Từ chối đơn thành công!');
-            loadData();
-          })
-          .catch(error => {
-            console.error('Lỗi khi reject:', error);
-            alert(`Từ chối đơn thất bại: ${error.message}`);
-          });
-      });
-    });
-  }
-
-  if (confirmBtn) {
-    confirmBtn.addEventListener('click', () => {
-      const selectedMonth = monthInput.value;
-      fetch('https://vinashootapi.live/WebApi/api/TimeSkip/convert-unpaid', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          employeeIds: [currentEmpId],
-          month: selectedMonth,
-          isApproved: true
-        })
-      })
-        .then(response => {
-          if (!response.ok) throw new Error('Lỗi khi duyệt đơn');
-          return response.json();
-        })
-        .then(result => {
-          alert(result.message || 'Duyệt đơn thành công!');
-          closePopup();
-          loadData();
-        })
-        .catch(error => {
-          console.error('Lỗi khi approve:', error);
-          alert(`Duyệt đơn thất bại: ${error.message}`);
-        });
-    });
-  }
-
-  if (cancelBtn) {
-    cancelBtn.addEventListener('click', closePopup);
-  }
-
-  exportButton.addEventListener('click', exportToExcel);
-
-  function exportToExcel() {
-    const selectedMonth = monthInput.value;
-    const nameFilter = nameInput.value.trim().toLowerCase();
-    const selectedLeaveType = leaveTypeSelect.value;
-
-    fetch(`https://vinashootapi.live/WebApi/api/TimeSkip/summary?month=${selectedMonth}`)
-      .then(response => {
-        if (!response.ok) throw new Error('Lỗi khi gọi API summary');
-        return response.json();
-      })
-      .then(data => {
-        // Lọc tương tự loadData()
-        const filtered = data.filter(emp => {
-          const matchName = nameFilter
-            ? emp.fullName.toLowerCase().includes(nameFilter)
-            : true;
-
-          let matchLeaveType = true;
-          if (selectedLeaveType) {
-            if (selectedLeaveType === 'Paid') {
-              matchLeaveType = emp.totalPaidLeaves > 0;
-            } else if (selectedLeaveType === 'Unpaid') {
-              matchLeaveType = emp.totalUnpaidLeaves > 0;
-            }
-          }
-          return matchName && matchLeaveType;
-        });
-
-        if (filtered.length === 0) {
-          alert('Không có dữ liệu để xuất.');
-          return;
-        }
-
-        // Chuẩn bị dữ liệu JSON chuyển sang Excel
-        const excelData = filtered.map(emp => ({
-          'Mã Nhân Viên': emp.employeeId || '-',
-          'Họ Và Tên': emp.fullName,
-          'Tổng công làm việc trong tháng': emp.totalWorkingDays,
-          'Nghỉ có phép': emp.totalPaidLeaves,
-          'Nghỉ không phép': emp.totalUnpaidLeaves,
-          'Tổng số buổi đi muộn': emp.totalLateSessions,
-          'Đơn đang chờ duyệt': emp.totalPendingLeaves || 0,
-          'Tổng thời gian đi muộn': emp.totalLateMinutes
-        }));
-
-        // Tạo workbook
-        const worksheet = XLSX.utils.json_to_sheet(excelData);
-        worksheet['!cols'] = [
-          { wch: 15 }, // Mã Nhân Viên
-          { wch: 25 }, // Họ Và Tên
-          { wch: 30 }, // Tổng công
-          { wch: 15 }, // Nghỉ có phép
-          { wch: 20 }, // Nghỉ không phép
-          { wch: 20 }, // Tổng buổi đi muộn
-          { wch: 20 }, // Đơn chờ duyệt
-          { wch: 25 }  // Tổng thời gian đi muộn
-        ];
-
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'BangTongHopCong');
-
-        // Xuất file
-        XLSX.writeFile(workbook, `BangTongHopCong_${selectedMonth}.xlsx`);
-      })
-      .catch(error => {
-        console.error('Lỗi xuất Excel:', error);
-        alert('Không thể xuất file Excel.');
-      });
-  }
-
-});
+// Start the application
+document.addEventListener('DOMContentLoaded', init);

@@ -27,5 +27,7 @@ public partial class Employee
 
     public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
 
+    public virtual ICollection<LeaveRequest> LeaveRequests { get; set; } = new List<LeaveRequest>();
+
     public virtual ICollection<User> Users { get; set; } = new List<User>();
 }

@@ -23,5 +23,7 @@ public partial class User
 
     public virtual Employee? Employee { get; set; }
 
+    public virtual ICollection<LeaveRequest> LeaveRequests { get; set; } = new List<LeaveRequest>();
+
     public virtual Role? Role { get; set; }
 }

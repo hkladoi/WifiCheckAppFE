@@ -10,4 +10,6 @@ public partial class LeaveType
     public string? LeaveTypeName { get; set; }
 
     public string? Description { get; set; }
+
+    public virtual ICollection<LeaveRequest> LeaveRequests { get; set; } = new List<LeaveRequest>();
 }

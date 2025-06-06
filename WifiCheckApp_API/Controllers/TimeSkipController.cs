@@ -461,25 +461,25 @@ namespace WifiCheckApp_API.Controllers
                         a.CheckInTime != null && a.CheckOutTime != null
                     ),
 
-                    TotalPaidLeaves = e.Attendances.Count(a =>
-                        a.WorkDate >= DateOnly.FromDateTime(startDate) &&
-                        a.WorkDate < DateOnly.FromDateTime(endDate) &&
-                        a.LeaveType == "Paid" &&
-                        a.Status == "Approve"
+                    TotalPaidLeaves = e.LeaveRequests.Count(lr =>
+                        lr.FromTime >= startDate &&
+                        lr.FromTime < endDate &&
+                        lr.LeaveType.LeaveTypeName.ToLower() == "paid" &&
+                        lr.Status.ToLower() == "approved"
                     ),
 
-                    TotalUnpaidLeaves = e.Attendances.Count(a =>
-                        a.WorkDate >= DateOnly.FromDateTime(startDate) &&
-                        a.WorkDate < DateOnly.FromDateTime(endDate) &&
-                        a.LeaveType == "Unpaid" &&
-                        a.Status == "Approve"
+                    TotalUnpaidLeaves = e.LeaveRequests.Count(lr =>
+                        lr.FromTime >= startDate &&
+                        lr.FromTime < endDate &&
+                        lr.LeaveType.LeaveTypeName.ToLower() == "unpaid" &&
+                        lr.Status.ToLower() == "approved"
                     ),
 
-                    TotalPendingLeaves = e.Attendances.Count(a =>
-                        a.WorkDate >= DateOnly.FromDateTime(startDate) &&
-                        a.WorkDate < DateOnly.FromDateTime(endDate) &&
-                        (a.LeaveType == "Paid" || a.LeaveType == "Unpaid") &&
-                        a.Status == "Confirm"
+                    TotalPendingLeaves = e.LeaveRequests.Count(lr =>
+                        lr.FromTime >= startDate &&
+                        lr.FromTime < endDate &&
+                        (lr.LeaveType.LeaveTypeName.ToLower() == "paid" || lr.LeaveType.LeaveTypeName.ToLower() == "unpaid") &&
+                        lr.Status.ToLower() == "pending"
                     ),
 
                     TotalLateSessions = e.Attendances.Count(a =>
@@ -516,29 +516,18 @@ namespace WifiCheckApp_API.Controllers
 
 
         [HttpGet("leave-types")]
-        public IActionResult GetLeaveTypes()
+        public async Task<IActionResult> GetLeaveTypes()
         {
-            var leaveTypes = _context.Attendances
-                .Where(a => !string.IsNullOrEmpty(a.LeaveType))
-                .Select(a => a.LeaveType)
-                .Distinct()
-                .ToList();
-
-            var result = leaveTypes.Select(type => new
+            var leaveTypes = await _context.LeaveTypes.ToListAsync();
+            if (leaveTypes == null || !leaveTypes.Any())
+                return NotFound("Không tìm thấy loại nghỉ phép nào trong hệ thống.");
+            var result = leaveTypes.Select(lt => new
             {
-                Value = type,
-                Text = type == "Paid" ? "Nghỉ phép (có lương)" :
-                       type == "Unpaid" ? "Nghỉ không phép" :
-                       type
+                leaveTypeId = lt.LeaveTypeId,
+                leaveTypeName = lt.LeaveTypeName.ToLower() == "paid" ? "Nghỉ có phép" :
+                                lt.LeaveTypeName.ToLower() == "unpaid" ? "Nghỉ không phép" :
+                                lt.LeaveTypeName,
             }).ToList();
-
-            // Nếu muốn hiển thị thêm trên UI (ví dụ cho dropdown lọc trạng thái), có thể thêm:
-            result.Add(new
-            {
-                Value = "Pending",
-                Text = "Đơn nghỉ đang chờ duyệt"
-            });
-
             return Ok(result);
         }
 
@@ -583,34 +572,30 @@ namespace WifiCheckApp_API.Controllers
 
 
         [HttpPost("submit-leave")]
-        public async Task<IActionResult> SubmitLeave([FromBody] Insert_attendance_model request)
+        public async Task<IActionResult> SubmitLeave([FromBody] LeaveRequestModel request)
         {
-            // 1. Check xem nhân viên tồn tại
             if (!await _context.Employees.AnyAsync(e => e.EmployeeId == request.EmployeeId))
                 return BadRequest($"Không tìm thấy nhân viên với EmployeeId = {request.EmployeeId}");
 
-            // 2. Map Note => LeaveType
-            var leaveType = request.Notes.Equals("Leave", StringComparison.OrdinalIgnoreCase)
-                            ? "Paid"
-                            : "Unpaid";
-
-            // 3. Tạo entity và lưu
-            var attendance = new Attendance
+            var leaveRequest = new LeaveRequest
             {
                 EmployeeId = request.EmployeeId,
-                WorkDate = DateOnly.FromDateTime(request.WorkDate),
-                Notes = request.Notes,      // dùng lại Note để hiển thị "Nghỉ phép"/"Nghỉ không lương"
-                LeaveType = leaveType,
-                Status = "Confirm"
+                FromTime = request.FromTime,
+                ToTime = request.ToTime,
+                SessionId = request.SessionId,
+                LeaveTypeId = request.LeaveTypeId,
+                Reason = request.Reason,
+                Status = "Confirm",
+                RequestedAt = DateTime.Now
             };
 
-            _context.Attendances.Add(attendance);
+            _context.LeaveRequests.Add(leaveRequest);
             await _context.SaveChangesAsync();
 
             return Ok(new
             {
                 Message = "Trạng thái nghỉ đã được ghi nhận.",
-                AttendanceId = attendance.AttendanceId
+                LeaveId = leaveRequest.LeaveId
             });
         }
 

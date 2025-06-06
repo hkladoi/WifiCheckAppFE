@@ -436,3 +436,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+let loadingInterval = null;
+function showLoadingSpinner() {
+  const spinner = document.getElementById('loadingSpinner');
+  if (!spinner) return;
+  spinner.style.display = 'flex';
+  let dotCount = 1;
+  spinner.textContent = 'Đang tải dữ liệu.';
+  loadingInterval = setInterval(() => {
+    dotCount = (dotCount % 3) + 1;
+    spinner.textContent = 'Đang tải dữ liệu' + '.'.repeat(dotCount);
+  }, 400);
+}
+function hideLoadingSpinner() {
+  const spinner = document.getElementById('loadingSpinner');
+  if (!spinner) return;
+  spinner.style.display = 'none';
+  spinner.textContent = 'Đang tải dữ liệu';
+  if (loadingInterval) clearInterval(loadingInterval);
+}

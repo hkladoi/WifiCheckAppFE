@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace WifiCheckApp_API.Models;
 
-public class WiFiBssid
+public partial class WiFiBssid
 {
     public int Id { get; set; }
 

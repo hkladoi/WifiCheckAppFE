@@ -27,6 +27,8 @@ public partial class TimeLapsContext : DbContext
 
     public virtual DbSet<GpsLocation> GpsLocations { get; set; }
 
+    public virtual DbSet<LeaveRequest> LeaveRequests { get; set; }
+
     public virtual DbSet<LeaveType> LeaveTypes { get; set; }
 
     public virtual DbSet<Role> Roles { get; set; }
@@ -77,7 +79,7 @@ public partial class TimeLapsContext : DbContext
 
         modelBuilder.Entity<AttendanceHistory>(entity =>
         {
-            entity.HasKey(e => e.HistoryId).HasName("PK__Attendan__4D7B4ADDB7889D1F");
+            entity.HasKey(e => e.HistoryId).HasName("PK__Attendan__4D7B4ADD3979FEBE");
 
             entity.ToTable("AttendanceHistory");
 
@@ -94,12 +96,12 @@ public partial class TimeLapsContext : DbContext
 
             entity.HasOne(d => d.PerformedByNavigation).WithMany(p => p.AttendanceHistories)
                 .HasForeignKey(d => d.PerformedBy)
-                .HasConstraintName("FK__Attendanc__Perfo__160F4887");
+                .HasConstraintName("FK__Attendanc__Perfo__6477ECF3");
         });
 
         modelBuilder.Entity<AttendanceSession>(entity =>
         {
-            entity.HasKey(e => e.SessionId).HasName("PK__Attendan__C9F4929090DAB012");
+            entity.HasKey(e => e.SessionId).HasName("PK__Attendan__C9F49290A3F559FA");
 
             entity.ToTable("AttendanceSession");
 
@@ -136,7 +138,7 @@ public partial class TimeLapsContext : DbContext
 
         modelBuilder.Entity<GpsLocation>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Location__3214EC07ED62AC45");
+            entity.HasKey(e => e.Id).HasName("PK__GpsLocat__3214EC07461C8999");
 
             entity.ToTable("GpsLocation");
 
@@ -144,9 +146,43 @@ public partial class TimeLapsContext : DbContext
             entity.Property(e => e.RadiusInMeters).HasDefaultValue(100.0);
         });
 
+        modelBuilder.Entity<LeaveRequest>(entity =>
+        {
+            entity.HasKey(e => e.LeaveId).HasName("PK__LeaveReq__796DB979F322F20F");
+
+            entity.Property(e => e.LeaveId).HasColumnName("LeaveID");
+            entity.Property(e => e.EmployeeId).HasColumnName("EmployeeID");
+            entity.Property(e => e.FromTime).HasColumnType("datetime");
+            entity.Property(e => e.ProcessedAt).HasColumnType("datetime");
+            entity.Property(e => e.RequestedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("Pending");
+            entity.Property(e => e.ToTime).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Employee).WithMany(p => p.LeaveRequests)
+                .HasForeignKey(d => d.EmployeeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_LeaveRequests_Employees");
+
+            entity.HasOne(d => d.LeaveType).WithMany(p => p.LeaveRequests)
+                .HasForeignKey(d => d.LeaveTypeId)
+                .HasConstraintName("FK_LeaveRequests_LeaveTypes");
+
+            entity.HasOne(d => d.ProcessedByNavigation).WithMany(p => p.LeaveRequests)
+                .HasForeignKey(d => d.ProcessedBy)
+                .HasConstraintName("FK_LeaveRequests_Users");
+
+            entity.HasOne(d => d.Session).WithMany(p => p.LeaveRequests)
+                .HasForeignKey(d => d.SessionId)
+                .HasConstraintName("FK_LeaveRequests_Session");
+        });
+
         modelBuilder.Entity<LeaveType>(entity =>
         {
-            entity.HasKey(e => e.LeaveTypeId).HasName("PK__LeaveTyp__43BE8FF4DB3CD53D");
+            entity.HasKey(e => e.LeaveTypeId).HasName("PK__LeaveTyp__43BE8FF4C8EB9248");
 
             entity.Property(e => e.LeaveTypeId).HasColumnName("LeaveTypeID");
             entity.Property(e => e.Description).HasMaxLength(255);
@@ -155,7 +191,7 @@ public partial class TimeLapsContext : DbContext
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE3A196FD1AF");
+            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE3A2B70E1D7");
 
             entity.Property(e => e.RoleId).HasColumnName("RoleID");
             entity.Property(e => e.Description).HasMaxLength(255);
@@ -164,9 +200,9 @@ public partial class TimeLapsContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CCAC7653795E");
+            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CCACCD44D3F2");
 
-            entity.HasIndex(e => e.Username, "UQ__Users__536C85E4F97CFD66").IsUnique();
+            entity.HasIndex(e => e.Username, "UQ__Users__536C85E4D8CCE61E").IsUnique();
 
             entity.Property(e => e.UserId).HasColumnName("UserID");
             entity.Property(e => e.CreatedAt)
@@ -184,12 +220,12 @@ public partial class TimeLapsContext : DbContext
 
             entity.HasOne(d => d.Role).WithMany(p => p.Users)
                 .HasForeignKey(d => d.RoleId)
-                .HasConstraintName("FK__Users__RoleID__10566F31");
+                .HasConstraintName("FK__Users__RoleID__6A30C649");
         });
 
         modelBuilder.Entity<WiFiBssid>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__WiFiBSSI__3214EC072B439109");
+            entity.HasKey(e => e.Id).HasName("PK__WiFiBSSI__3214EC07F3FC61EC");
 
             entity.ToTable("WiFiBSSID");
 
@@ -199,12 +235,12 @@ public partial class TimeLapsContext : DbContext
 
             entity.HasOne(d => d.WiFi).WithMany(p => p.WiFiBssids)
                 .HasForeignKey(d => d.WiFiId)
-                .HasConstraintName("FK__WiFiBSSID__WiFiI__3493CFA7");
+                .HasConstraintName("FK__WiFiBSSID__WiFiI__6C190EBB");
         });
 
         modelBuilder.Entity<WiFiLocation>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Wifi__3214EC07E0FA9EAA");
+            entity.HasKey(e => e.Id).HasName("PK__WiFiLoca__3214EC07C881C7DD");
 
             entity.ToTable("WiFiLocation");
 
