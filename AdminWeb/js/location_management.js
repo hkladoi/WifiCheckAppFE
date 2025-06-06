@@ -224,7 +224,7 @@ class LocationManager {
                     <td>${location.radiusInMeters || 'N/A'} mét</td>
                     <td>
                         <button class="btn btn-danger delete-btn" style="background-color: red; color: white;" data-id="${location.id}" title="Xóa Vị trí">Xóa</button>
-                        <button class="btn btn-secondary edit-btn" style="background-color: blue; color: white;" data-id="${location.id}" title="Chỉnh sửa Vị trí">Chỉnh sửa</button>
+                        <button class="btn btn-secondary edit-btn" style="background-color: orange; color: white;" data-id="${location.id}" title="Chỉnh sửa Vị trí">Chỉnh sửa</button>
                     </td>
                 </tr>
             `;
@@ -426,4 +426,13 @@ class LocationManager {
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     new LocationManager();
+
+    const modal = document.getElementById('addLocationModal');
+  const modalContent = document.querySelector('.modal-content');
+
+  modal.addEventListener('click', function (e) {
+    if (!modalContent.contains(e.target)) {
+        e.stopPropagation();
+    }
+  });
 });

@@ -50,7 +50,7 @@
         if (radio.value === "Normal" && radio.checked) {
           timeInputs.style.display = "block";
         } else if (radio.checked) {
-          timeInputs.style.display = "none";
+          // timeInputs.style.display = "none";
         }
       });
     });
@@ -58,7 +58,7 @@
     // Mặc định hiển thị đúng trạng thái khi load lại modal
     const checkedRadio = document.querySelector('input[name="note"]:checked');
     if (checkedRadio?.value !== "Normal") {
-      timeInputs.style.display = "none";
+      // timeInputs.style.display = "none";
     }
   });
 </script>

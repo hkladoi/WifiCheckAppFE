@@ -104,20 +104,23 @@ document.addEventListener('DOMContentLoaded', function () {
             <td>${emp.totalPendingLeaves || 0}</td>
             <td>${emp.totalLateMinutes}</td>
             <td>
-              <button class="approve-btn" 
-                      data-id="${emp.employeeId}" 
-                      data-paid="${emp.totalPaidLeaves}" 
-                      data-unpaid="${emp.totalUnpaidLeaves}" 
-                      data-pending="${emp.totalPendingLeaves || 0}">
-                Duyệt đơn
-              </button>
-              <button class="reject-btn" data-id="${emp.employeeId}">
-                Từ chối
-              </button>
             </td>
           `;
           tableBody.appendChild(row);
         });
+
+        //  <td>
+        //       <button class="approve-btn" 
+        //               data-id="${emp.employeeId}" 
+        //               data-paid="${emp.totalPaidLeaves}" 
+        //               data-unpaid="${emp.totalUnpaidLeaves}" 
+        //               data-pending="${emp.totalPendingLeaves || 0}">
+        //         Duyệt đơn
+        //       </button>
+        //       <button class="reject-btn" data-id="${emp.employeeId}">
+        //         Từ chối
+        //       </button>
+        //     </td>
 
         // Sau khi render xong, attach event cho từng nút
         attachPopupEvents();

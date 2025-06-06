@@ -419,4 +419,13 @@ class WiFiManager {
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     new WiFiManager();
+
+    const modal = document.getElementById('addWifiModal');
+  const modalContent = document.querySelector('.modal-content');
+
+  modal.addEventListener('click', function (e) {
+    if (!modalContent.contains(e.target)) {
+        e.stopPropagation();
+    }
+  });
 });

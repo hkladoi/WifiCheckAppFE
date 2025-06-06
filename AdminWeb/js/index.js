@@ -152,7 +152,7 @@ document.addEventListener("DOMContentLoaded", () => {
           selectedDate = date;
 
           modal.style.display = "flex";
-          document.querySelector('input[name="status"][value="Normal"]').checked = true;
+          // document.querySelector('input[name="status"][value="Normal"]').checked = true;
           timeInputs.style.display = "block";
 
           ["morningCheckIn", "morningCheckOut", "afternoonCheckIn", "afternoonCheckOut"].forEach(id => {
