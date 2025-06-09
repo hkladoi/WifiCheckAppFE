@@ -191,7 +191,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     try {
-      const res = await fetch(`https://vinashootapi.live/WebApi/api/TimeSkip/submit-leave`, {
+      const res = await fetch(`${API_BASE_URL}/WebApi/api/TimeSkip/submit-leave`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

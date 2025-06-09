@@ -57,7 +57,7 @@ function getCurrentLocation() {
 // Hàm lấy danh sách vị trí được phép từ API
 async function getAllowedLocations() {
     try {
-        const response = await fetch('/api/locations');
+        const response = await fetch(`${API_BASE_URL}/Gps/GetAllGps`);
         if (!response.ok) {
             throw new Error('Không thể lấy danh sách vị trí');
         }
@@ -71,7 +71,7 @@ async function getAllowedLocations() {
 // Hàm gửi yêu cầu chấm công
 async function submitCheckIn(location) {
     try {
-        const response = await fetch('/api/check-in', {
+        const response = await fetch(`${API_BASE_URL}/TimeSkip/checkin`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -84,7 +84,8 @@ async function submitCheckIn(location) {
         });
 
         if (!response.ok) {
-            throw new Error('Không thể gửi yêu cầu chấm công');
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Không thể gửi yêu cầu chấm công');
         }
 
         return await response.json();
