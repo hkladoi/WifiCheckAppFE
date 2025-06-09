@@ -11,8 +11,67 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     return R * c * 1000; // Chuyển đổi sang mét
 }
 
+// Helper function to calculate lateMinute and checkinStatus / earlyCheckOutMinutes and checkoutStatus
+function calculateAttendanceStatus(checkInOrOutTime, type) {
+    const currentTime = new Date(checkInOrOutTime);
+    const hours = currentTime.getHours();
+    const minutes = currentTime.getMinutes();
+
+    let expectedStartTimeMorning = new Date(currentTime);
+    expectedStartTimeMorning.setHours(8, 0, 0, 0); // 8:00 AM
+
+    let expectedEndTimeMorning = new Date(currentTime);
+    expectedEndTimeMorning.setHours(12, 0, 0, 0); // 12:00 PM (end of morning shift for calculation)
+
+    let expectedStartTimeAfternoon = new Date(currentTime);
+    expectedStartTimeAfternoon.setHours(13, 30, 0, 0); // 1:30 PM
+
+    let expectedEndTimeAfternoon = new Date(currentTime);
+    expectedEndTimeAfternoon.setHours(17, 30, 0, 0); // 5:30 PM
+
+    if (type === 'checkin') {
+        let lateMinute = 0;
+        let checkinStatus = "Đúng giờ";
+
+        if (hours < 12) { // Morning check-in
+            if (currentTime > expectedStartTimeMorning) {
+                const diffInMs = currentTime.getTime() - expectedStartTimeMorning.getTime();
+                lateMinute = Math.floor(diffInMs / (1000 * 60));
+                checkinStatus = "Đi muộn";
+            }
+        } else { // Afternoon check-in
+            if (currentTime > expectedStartTimeAfternoon) {
+                const diffInMs = currentTime.getTime() - expectedStartTimeAfternoon.getTime();
+                lateMinute = Math.floor(diffInMs / (1000 * 60));
+                checkinStatus = "Đi muộn";
+            }
+        }
+        return { lateMinute, checkinStatus };
+    } else if (type === 'checkout') {
+        let earlyCheckOutMinutes = 0;
+        let checkoutStatus = "Đúng giờ";
+
+        if (hours < 12) { // Morning check-out (assuming morning shift ends at 12:00 PM)
+            if (currentTime < expectedEndTimeMorning) {
+                const diffInMs = expectedEndTimeMorning.getTime() - currentTime.getTime();
+                earlyCheckOutMinutes = Math.floor(diffInMs / (1000 * 60));
+                checkoutStatus = "Về sớm";
+            }
+        } else { // Afternoon check-out (assuming afternoon shift ends at 5:30 PM)
+            if (currentTime < expectedEndTimeAfternoon) {
+                const diffInMs = expectedEndTimeAfternoon.getTime() - currentTime.getTime();
+                earlyCheckOutMinutes = Math.floor(diffInMs / (1000 * 60));
+                checkoutStatus = "Về sớm";
+            }
+        }
+        return { earlyCheckOutMinutes, checkoutStatus };
+    }
+    return {};
+}
+
 // Hàm kiểm tra xem vị trí hiện tại có nằm trong phạm vi cho phép không
-function isWithinAllowedLocation(currentLocation, allowedLocations, maxDistance = 100) {
+// Now takes allowedLocations which include radiusInMeters
+function isWithinAllowedLocation(currentLocation, allowedLocations) {
     for (const location of allowedLocations) {
         const distance = calculateDistance(
             currentLocation.latitude,
@@ -20,7 +79,9 @@ function isWithinAllowedLocation(currentLocation, allowedLocations, maxDistance 
             location.latitude,
             location.longitude
         );
-        if (distance <= maxDistance) {
+        // Use location.radiusInMeters for comparison, default to 100 if not present
+        const allowedRadius = location.radiusInMeters || 100;
+        if (distance <= allowedRadius) {
             return true;
         }
     }
@@ -69,17 +130,27 @@ async function getAllowedLocations() {
 }
 
 // Hàm gửi yêu cầu chấm công
-async function submitCheckIn(location) {
+async function submitCheckIn() {
     try {
+        const userEmail = localStorage.getItem('email'); // Assuming email is stored in localStorage
+        if (!userEmail) {
+            throw new Error('Không tìm thấy email người dùng. Vui lòng đăng nhập lại.');
+        }
+
+        const currentCheckInTime = new Date();
+        const { lateMinute, checkinStatus } = calculateAttendanceStatus(currentCheckInTime, 'checkin');
+
         const response = await fetch(`${API_BASE_URL}/TimeSkip/checkin`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
             },
             body: JSON.stringify({
-                latitude: location.latitude,
-                longitude: location.longitude,
-                timestamp: new Date().toISOString()
+                email: userEmail,
+                checkIn: currentCheckInTime.toISOString(),
+                lateMinute: lateMinute,
+                checkinStatus: checkinStatus
             })
         });
 
@@ -91,6 +162,43 @@ async function submitCheckIn(location) {
         return await response.json();
     } catch (error) {
         console.error('Lỗi khi gửi yêu cầu chấm công:', error);
+        throw error;
+    }
+}
+
+// Hàm gửi yêu cầu ra về (checkout)
+async function submitCheckOut() {
+    try {
+        const userEmail = localStorage.getItem('email');
+        if (!userEmail) {
+            throw new Error('Không tìm thấy email người dùng. Vui lòng đăng nhập lại.');
+        }
+
+        const currentCheckOutTime = new Date();
+        const { earlyCheckOutMinutes, checkoutStatus } = calculateAttendanceStatus(currentCheckOutTime, 'checkout');
+
+        const response = await fetch(`${API_BASE_URL}/TimeSkip/checkout`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+                email: userEmail,
+                checkOut: currentCheckOutTime.toISOString(),
+                earlyCheckOutMinutes: earlyCheckOutMinutes,
+                checkoutStatus: checkoutStatus
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Không thể gửi yêu cầu ra về');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('Lỗi khi gửi yêu cầu ra về:', error);
         throw error;
     }
 }
@@ -108,37 +216,118 @@ async function initializePage() {
     const currentLocationSpan = document.getElementById('current-location');
     const allowedLocationsSpan = document.getElementById('allowed-locations');
     const checkInButton = document.getElementById('check-in-btn');
+    const checkOutButton = document.getElementById('check-out-btn');
     let currentLocation = null;
     let allowedLocations = [];
+    let foundGpsId = 0;
 
     try {
         // Lấy danh sách vị trí được phép
         allowedLocations = await getAllowedLocations();
-        allowedLocationsSpan.textContent = allowedLocations.map(loc => loc.name).join(', ');
+        allowedLocationsSpan.textContent = allowedLocations.map(loc => loc.name + ` (${loc.radiusInMeters || 100}m)`).join(', ');
 
-        // Lấy vị trí hiện tại
+        // Lấy vị trí hiện tại và cập nhật UI
         currentLocation = await getCurrentLocation();
         currentLocationSpan.textContent = `${currentLocation.latitude.toFixed(6)}, ${currentLocation.longitude.toFixed(6)}`;
 
         // Kiểm tra xem có nằm trong vị trí được phép không
-        if (isWithinAllowedLocation(currentLocation, allowedLocations)) {
+        const nearestLocation = allowedLocations.reduce((nearest, current) => {
+            const distance = calculateDistance(
+                currentLocation.latitude,
+                currentLocation.longitude,
+                current.latitude,
+                current.longitude
+            );
+            return (!nearest || distance < nearest.distance) ? { ...current, distance } : nearest;
+        }, null);
+
+        const isInValidLocation = nearestLocation && nearestLocation.distance <= (nearestLocation.radiusInMeters || 100);
+
+        if (isInValidLocation) {
             checkInButton.disabled = false;
+            checkOutButton.disabled = false; // Both can be enabled initially
+            foundGpsId = nearestLocation.id; // Store gpsId for later use
         } else {
             showMessage('Bạn không nằm trong khu vực được phép chấm công', true);
+            checkInButton.disabled = true;
+            checkOutButton.disabled = true;
         }
     } catch (error) {
         showMessage(error.message, true);
+        checkInButton.disabled = true;
+        checkOutButton.disabled = true;
     }
 
-    // Xử lý sự kiện click nút chấm công
+    // Xử lý sự kiện click nút chấm công (Check-in)
     checkInButton.addEventListener('click', async () => {
         try {
             checkInButton.disabled = true;
-            const result = await submitCheckIn(currentLocation);
-            showMessage('Chấm công thành công!');
+            checkOutButton.disabled = true; // Disable both during processing
+
+            const userLocation = await getCurrentLocation();
+            // Re-check location and get gpsId before sending request
+            const validLocations = await getAllowedLocations();
+            let currentFoundGpsId = 0;
+
+            const nearestLocation = validLocations.reduce((nearest, current) => {
+              const distance = calculateDistance(
+                userLocation.latitude,
+                userLocation.longitude,
+                current.latitude,
+                current.longitude
+              );
+              return (!nearest || distance < nearest.distance) ? { ...current, distance } : nearest;
+            }, null);
+
+            if (nearestLocation && nearestLocation.distance <= (nearestLocation.radiusInMeters || 100)) {
+                currentFoundGpsId = nearestLocation.id; 
+            } else {
+                throw new Error('Vị trí hiện tại không hợp lệ. Vui lòng thử lại ở vị trí khác.');
+            }
+            
+            const result = await submitCheckIn(userLocation, currentFoundGpsId);
+            showMessage('Chấm công thành công!', false);
+            // No need to re-initializePage, as API handles status
         } catch (error) {
             showMessage(error.message, true);
             checkInButton.disabled = false;
+            checkOutButton.disabled = false;
+        }
+    });
+
+    // Xử lý sự kiện click nút ra về (Check-out)
+    checkOutButton.addEventListener('click', async () => {
+        try {
+            checkInButton.disabled = true;
+            checkOutButton.disabled = true; // Disable both during processing
+
+            const userLocation = await getCurrentLocation(); // Re-check location
+            const validLocations = await getAllowedLocations();
+            let currentFoundGpsId = 0;
+
+            const nearestLocation = validLocations.reduce((nearest, current) => {
+                const distance = calculateDistance(
+                    userLocation.latitude,
+                    userLocation.longitude,
+                    current.latitude,
+                    current.longitude
+                );
+                return (!nearest || distance < nearest.distance) ? { ...current, distance } : nearest;
+            }, null);
+
+            if (nearestLocation && nearestLocation.distance > (nearestLocation.radiusInMeters || 100)) {
+                throw new Error('Bạn không nằm trong khu vực được phép ra về. Vui lòng thử lại ở vị trí khác.');
+            } else {
+                currentFoundGpsId = nearestLocation.id; // Store gpsId for checkout
+            }
+
+            const result = await submitCheckOut(userLocation, currentFoundGpsId);
+            showMessage('Ra về thành công!', false);
+            // No need to re-initializePage, as API handles status
+        } catch (error) {
+            showMessage(error.message, true);
+            checkInButton.disabled = false;
+            checkOutButton.disabled = false;
         }
     });
 }

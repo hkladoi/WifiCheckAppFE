@@ -102,7 +102,8 @@ namespace WifiCheckApp_API.Controllers
                 Role = roleName,
                 FullName = fullname,
                 EmployeeId = user.Employee?.EmployeeId,
-                UserId = user.UserId
+                UserId = user.UserId,
+                Email = user.Employee?.Email ?? string.Empty
             });
         }
         private static string GetRoleName(string roleNameFromDb)

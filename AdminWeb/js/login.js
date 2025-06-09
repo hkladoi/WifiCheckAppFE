@@ -41,6 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
       localStorage.setItem("role", data.role || "");
       localStorage.setItem("fullName", data.fullName || "");
       localStorage.setItem("userId", String(data.userId || ""));
+      localStorage.setItem("email",data.email)
 
       //  Chuyển employeeId thành chuỗi nếu là số
       if (data.employeeId !== undefined && data.employeeId !== null) {
