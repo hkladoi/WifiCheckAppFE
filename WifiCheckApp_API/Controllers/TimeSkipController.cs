@@ -352,11 +352,13 @@ namespace WifiCheckApp_API.Controllers
                 MorningCheckOut = morning?.CheckOutTime?.ToString("HH:mm"),
                 AfternoonCheckIn = afternoon?.CheckInTime?.ToString("HH:mm"),
                 AfternoonCheckOut = afternoon?.CheckOutTime?.ToString("HH:mm"),
+                LateMinutes = morning?.LateMinutes ?? afternoon?.LateMinutes ?? 0,
+                EarlyLeaveMinutes = morning?.EarlyCheckOutMinutes ?? afternoon?.EarlyCheckOutMinutes ?? 0,
                 LeaveStatus = !string.IsNullOrEmpty(leaveStatus) ? (morning?.Status ?? afternoon?.Status) : null
             };
 
             // Luôn tính công dựa trên log chấm công, bỏ qua LeaveType
-            var (workingDay, lateMinutes, earlyLeaveMinutes) = CalculateDailyWork(morning, afternoon);
+            var workingDay = CalculateDailyWork(morning, afternoon);
 
             // Đối với những ngày không phải ngày làm việc, không tính công và không tính vắng mặt
             if (!isWorkingDay)
@@ -368,8 +370,6 @@ namespace WifiCheckApp_API.Controllers
             else
             {
                 dailyModel.WorkingDay = Math.Round(workingDay, 2);
-                dailyModel.LateMinutes = lateMinutes;
-                dailyModel.EarlyLeaveMinutes = earlyLeaveMinutes;
 
                 // Status ưu tiên theo leave status nếu có (để hiển thị), nhưng không ảnh hưởng ngày công
                 if (!string.IsNullOrEmpty(leaveStatus))
@@ -387,48 +387,18 @@ namespace WifiCheckApp_API.Controllers
             return dailyModel;
         }
 
-        private (double workingDay, int lateMinutes, int earlyLeaveMinutes) CalculateDailyWork(Attendance? morning, Attendance? afternoon)
+        private double CalculateDailyWork(Attendance? morning, Attendance? afternoon)
         {
             double workingDay = 0;
             int lateMinutes = 0, earlyLeaveMinutes = 0;
 
             // Tính session buổi sáng
-            if (morning?.CheckInTime != null || morning?.CheckOutTime != null)
+            if (morning?.CheckInTime != null || morning?.CheckOutTime != null || afternoon?.CheckInTime != null || afternoon?.CheckOutTime != null)
             {
-                // Có log chấm công buổi sáng
                 workingDay += 0.5;
-
-                // Tính late cho buổi sáng (nếu cần)
-                if (morning?.CheckInTime != null)
-                {
-                    var checkIn = morning.CheckInTime.Value.TimeOfDay;
-                    var expectedStart = new TimeSpan(8, 0, 0);
-                    if (checkIn > expectedStart)
-                    {
-                        lateMinutes = (int)(checkIn - expectedStart).TotalMinutes;
-                    }
-                }
             }
 
-            // Tính session buổi chiều
-            if (afternoon?.CheckInTime != null || afternoon?.CheckOutTime != null)
-            {
-                // Có log chấm công buổi chiều
-                workingDay += 0.5;
-
-                // Tính early leave cho buổi chiều (nếu cần)
-                if (afternoon?.CheckOutTime != null)
-                {
-                    var checkOut = afternoon.CheckOutTime.Value.TimeOfDay;
-                    var expectedEnd = new TimeSpan(17, 30, 0);
-                    if (checkOut < expectedEnd)
-                    {
-                        earlyLeaveMinutes = (int)(expectedEnd - checkOut).TotalMinutes;
-                    }
-                }
-            }
-
-            return (workingDay, lateMinutes, earlyLeaveMinutes);
+            return workingDay;
         }
 
         private DateTime GetDateTimeLocal(DateTime dateTime)
