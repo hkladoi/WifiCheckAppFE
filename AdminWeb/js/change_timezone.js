@@ -75,7 +75,8 @@ try {
             <td><input type="time" class="check-out-morning"   value="${row.checkOutMorning || ""}"   /></td>
             <td><input type="time" class="check-in-afternoon"  value="${row.checkInAfternoon || ""}"  /></td>
             <td><input type="time" class="check-out-afternoon" value="${row.checkOutAfternoon || ""}" /></td>
-            <td><input type="text" class="reason" placeholder="Nhập lý do" /></td>
+            <td><textarea class="notes" readonly>${row.notes || ""}</textarea></td>
+            <td><textarea class="reason" placeholder="Nhập lý do" rows="3"></textarea></td>
             <td><button type="button" class="save-btn">Lưu</button></td>
           `;
 

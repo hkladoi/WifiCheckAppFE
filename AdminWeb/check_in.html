@@ -61,6 +61,13 @@
             <p>Vị trí được phép chấm công: <span id="allowed-locations">Đang tải...</span></p>
         </div>
         <div id="status-message" class="status-message" style="display: none;"></div>
+        
+        <div class="notes-section" style="margin-top: 15px;">
+            <input type="checkbox" id="force-check-location-checkbox"/>
+            <label for="force-check-location-checkbox">Chấm công ngoài khu vực (có ghi chú)</label>
+            <textarea id="note-input" placeholder="Nhập ghi chú của bạn nếu chấm công ngoài khu vực..." style="width: 100%; height: 80px; margin-top: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" disabled></textarea>
+        </div>
+
         <button id="check-in-btn" class="check-in-button" disabled>Chấm công</button>
         <button id="check-out-btn" class="check-in-button" disabled style="background-color: #dc3545; margin-top: 10px;">Ra về</button>
     </div>

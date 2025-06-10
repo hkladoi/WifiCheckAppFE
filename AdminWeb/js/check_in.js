@@ -3,11 +3,11 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371; // Bán kính trái đất (km)
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-        Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c * 1000; // Chuyển đổi sang mét
 }
 
@@ -130,15 +130,34 @@ async function getAllowedLocations() {
 }
 
 // Hàm gửi yêu cầu chấm công
-async function submitCheckIn() {
+async function submitCheckIn(notes) {
+    const checkInButton = document.getElementById('check-in-btn');
+    const checkOutButton = document.getElementById('check-out-btn');
     try {
-        const userEmail = localStorage.getItem('email'); // Assuming email is stored in localStorage
+        const userEmail = localStorage.getItem('email');
         if (!userEmail) {
             throw new Error('Không tìm thấy email người dùng. Vui lòng đăng nhập lại.');
         }
 
         const currentCheckInTime = new Date();
         const { lateMinute, checkinStatus } = calculateAttendanceStatus(currentCheckInTime, 'checkin');
+        
+        // Determine typecheck based on time of day
+        const hours = currentCheckInTime.getHours();
+        const typecheck = hours < 12 ? 1 : 2; // 1 for morning, 2 for afternoon
+
+        // Format date to Vietnam timezone
+        const vietnamTime = new Date(currentCheckInTime.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));
+        const formattedTime = vietnamTime.toLocaleString('en-US', { 
+            timeZone: 'Asia/Ho_Chi_Minh',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        }).replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+):(\d+)/, '$3-$1-$2T$4:$5:$6.000Z');
 
         const response = await fetch(`${API_BASE_URL}/TimeSkip/checkin`, {
             method: 'POST',
@@ -148,26 +167,41 @@ async function submitCheckIn() {
             },
             body: JSON.stringify({
                 email: userEmail,
-                checkIn: currentCheckInTime.toISOString(),
+                checkIn: formattedTime,
                 lateMinute: lateMinute,
-                checkinStatus: checkinStatus
+                checkinStatus: checkinStatus,
+                typecheck: typecheck,
+                notes: notes
             })
         });
 
+        let displayMessage;
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Không thể gửi yêu cầu chấm công');
+            displayMessage = await response.text();
+            showMessage(displayMessage, true);
+        } else {
+            const jsonResponse = await response.json();
+            displayMessage = jsonResponse.message;
+
+            if (checkinStatus === "Đi muộn" && lateMinute > 0) {
+                displayMessage += `\nĐi muộn: ${lateMinute} phút`;
+            }
+            showMessage(displayMessage, false);
         }
 
-        return await response.json();
     } catch (error) {
         console.error('Lỗi khi gửi yêu cầu chấm công:', error);
-        throw error;
+        showMessage(error.message, true);
+    } finally {
+        checkInButton.disabled = false;
+        checkOutButton.disabled = false;
     }
 }
 
 // Hàm gửi yêu cầu ra về (checkout)
-async function submitCheckOut() {
+async function submitCheckOut(notes) {
+    const checkInButton = document.getElementById('check-in-btn');
+    const checkOutButton = document.getElementById('check-out-btn');
     try {
         const userEmail = localStorage.getItem('email');
         if (!userEmail) {
@@ -177,6 +211,23 @@ async function submitCheckOut() {
         const currentCheckOutTime = new Date();
         const { earlyCheckOutMinutes, checkoutStatus } = calculateAttendanceStatus(currentCheckOutTime, 'checkout');
 
+        // Determine typecheck based on time of day for checkout
+        const hours = currentCheckOutTime.getHours();
+        const typecheck = hours < 12 ? 1 : 2; // 1 for morning, 2 for afternoon
+
+        // Format date to Vietnam timezone
+        const vietnamTime = new Date(currentCheckOutTime.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));
+        const formattedTime = vietnamTime.toLocaleString('en-US', { 
+            timeZone: 'Asia/Ho_Chi_Minh',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        }).replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+):(\d+)/, '$3-$1-$2T$4:$5:$6.000Z');
+
         const response = await fetch(`${API_BASE_URL}/TimeSkip/checkout`, {
             method: 'POST',
             headers: {
@@ -185,21 +236,34 @@ async function submitCheckOut() {
             },
             body: JSON.stringify({
                 email: userEmail,
-                checkOut: currentCheckOutTime.toISOString(),
+                checkOut: formattedTime,
                 earlyCheckOutMinutes: earlyCheckOutMinutes,
-                checkoutStatus: checkoutStatus
+                checkoutStatus: checkoutStatus,
+                typecheck: typecheck,
+                notes: notes
             })
         });
 
+        let displayMessage;
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Không thể gửi yêu cầu ra về');
+            displayMessage = await response.text();
+            showMessage(displayMessage, true);
+        } else {
+            const jsonResponse = await response.json();
+            displayMessage = jsonResponse.message;
+
+            if (checkoutStatus === "Về sớm" && earlyCheckOutMinutes > 0) {
+                displayMessage += `\nVề sớm: ${earlyCheckOutMinutes} phút`;
+            }
+            showMessage(displayMessage, false);
         }
 
-        return await response.json();
     } catch (error) {
         console.error('Lỗi khi gửi yêu cầu ra về:', error);
-        throw error;
+        showMessage(error.message, true);
+    } finally {
+        checkInButton.disabled = false;
+        checkOutButton.disabled = false;
     }
 }
 
@@ -217,9 +281,11 @@ async function initializePage() {
     const allowedLocationsSpan = document.getElementById('allowed-locations');
     const checkInButton = document.getElementById('check-in-btn');
     const checkOutButton = document.getElementById('check-out-btn');
+    const noteInput = document.getElementById('note-input');
+    const forceCheckLocationCheckbox = document.getElementById('force-check-location-checkbox');
+    const statusMessage = document.getElementById('status-message');
     let currentLocation = null;
     let allowedLocations = [];
-    let foundGpsId = 0;
 
     try {
         // Lấy danh sách vị trí được phép
@@ -230,64 +296,47 @@ async function initializePage() {
         currentLocation = await getCurrentLocation();
         currentLocationSpan.textContent = `${currentLocation.latitude.toFixed(6)}, ${currentLocation.longitude.toFixed(6)}`;
 
-        // Kiểm tra xem có nằm trong vị trí được phép không
-        const nearestLocation = allowedLocations.reduce((nearest, current) => {
-            const distance = calculateDistance(
-                currentLocation.latitude,
-                currentLocation.longitude,
-                current.latitude,
-                current.longitude
-            );
-            return (!nearest || distance < nearest.distance) ? { ...current, distance } : nearest;
-        }, null);
+        // Enable buttons by default
+        checkInButton.disabled = false;
+        checkOutButton.disabled = false;
+        noteInput.disabled = true; // Initially disabled
 
-        const isInValidLocation = nearestLocation && nearestLocation.distance <= (nearestLocation.radiusInMeters || 100);
-
-        if (isInValidLocation) {
-            checkInButton.disabled = false;
-            checkOutButton.disabled = false; // Both can be enabled initially
-            foundGpsId = nearestLocation.id; // Store gpsId for later use
-        } else {
-            showMessage('Bạn không nằm trong khu vực được phép chấm công', true);
-            checkInButton.disabled = true;
-            checkOutButton.disabled = true;
-        }
     } catch (error) {
         showMessage(error.message, true);
         checkInButton.disabled = true;
         checkOutButton.disabled = true;
+        noteInput.disabled = true;
     }
+
+    // Add checkbox event listener
+    forceCheckLocationCheckbox.addEventListener('change', () => {
+        noteInput.disabled = !forceCheckLocationCheckbox.checked;
+        if (forceCheckLocationCheckbox.checked) {
+            statusMessage.style.display = 'none'; // Hide any existing message
+            checkInButton.disabled = false;
+            checkOutButton.disabled = false;
+        }
+    });
 
     // Xử lý sự kiện click nút chấm công (Check-in)
     checkInButton.addEventListener('click', async () => {
         try {
             checkInButton.disabled = true;
-            checkOutButton.disabled = true; // Disable both during processing
+            checkOutButton.disabled = true;
 
-            const userLocation = await getCurrentLocation();
-            // Re-check location and get gpsId before sending request
-            const validLocations = await getAllowedLocations();
-            let currentFoundGpsId = 0;
-
-            const nearestLocation = validLocations.reduce((nearest, current) => {
-              const distance = calculateDistance(
-                userLocation.latitude,
-                userLocation.longitude,
-                current.latitude,
-                current.longitude
-              );
-              return (!nearest || distance < nearest.distance) ? { ...current, distance } : nearest;
-            }, null);
-
-            if (nearestLocation && nearestLocation.distance <= (nearestLocation.radiusInMeters || 100)) {
-                currentFoundGpsId = nearestLocation.id; 
-            } else {
-                throw new Error('Vị trí hiện tại không hợp lệ. Vui lòng thử lại ở vị trí khác.');
+            // const userLocation = await getCurrentLocation();
+            const userLocation = {
+                latitude: 21.0304266669616,
+                longitude: 105.76412196764761
+            };
+            let notes = `Chấm công ngoài công ty ở vị trí ${userLocation.latitude.toFixed(6)}, ${userLocation.longitude.toFixed(6)}`;
+            
+            // Add user's note if checkbox is checked and note is provided
+            if (forceCheckLocationCheckbox.checked && noteInput.value.trim()) {
+                notes += `\nLý do: ${noteInput.value.trim()}`;
             }
             
-            const result = await submitCheckIn(userLocation, currentFoundGpsId);
-            showMessage('Chấm công thành công!', false);
-            // No need to re-initializePage, as API handles status
+            const result = await submitCheckIn(notes);
         } catch (error) {
             showMessage(error.message, true);
             checkInButton.disabled = false;
@@ -299,31 +348,21 @@ async function initializePage() {
     checkOutButton.addEventListener('click', async () => {
         try {
             checkInButton.disabled = true;
-            checkOutButton.disabled = true; // Disable both during processing
+            checkOutButton.disabled = true;
 
-            const userLocation = await getCurrentLocation(); // Re-check location
-            const validLocations = await getAllowedLocations();
-            let currentFoundGpsId = 0;
-
-            const nearestLocation = validLocations.reduce((nearest, current) => {
-                const distance = calculateDistance(
-                    userLocation.latitude,
-                    userLocation.longitude,
-                    current.latitude,
-                    current.longitude
-                );
-                return (!nearest || distance < nearest.distance) ? { ...current, distance } : nearest;
-            }, null);
-
-            if (nearestLocation && nearestLocation.distance > (nearestLocation.radiusInMeters || 100)) {
-                throw new Error('Bạn không nằm trong khu vực được phép ra về. Vui lòng thử lại ở vị trí khác.');
-            } else {
-                currentFoundGpsId = nearestLocation.id; // Store gpsId for checkout
+            // const userLocation = await getCurrentLocation();
+            const userLocation = {
+                latitude: 21.0304266669616,
+                longitude: 105.76412196764761
+            };
+            let notes = `Ra về ngoài công ty ở vị trí ${userLocation.latitude.toFixed(6)}, ${userLocation.longitude.toFixed(6)}`;
+            
+            // Add user's note if checkbox is checked and note is provided
+            if (forceCheckLocationCheckbox.checked && noteInput.value.trim()) {
+                notes += `\nLý do: ${noteInput.value.trim()}`;
             }
-
-            const result = await submitCheckOut(userLocation, currentFoundGpsId);
-            showMessage('Ra về thành công!', false);
-            // No need to re-initializePage, as API handles status
+            
+            const result = await submitCheckOut(notes);
         } catch (error) {
             showMessage(error.message, true);
             checkInButton.disabled = false;

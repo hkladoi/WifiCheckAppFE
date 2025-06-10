@@ -641,7 +641,9 @@ namespace WifiCheckApp_API.Controllers
 
                     AttendanceIdAfternoon = afternoon?.AttendanceId,
                     CheckInAfternoon = afternoon?.CheckInTime?.ToString("HH:mm") ?? "",
-                    CheckOutAfternoon = afternoon?.CheckOutTime?.ToString("HH:mm") ?? ""
+                    CheckOutAfternoon = afternoon?.CheckOutTime?.ToString("HH:mm") ?? "",
+
+                    Notes = morning?.Notes ?? afternoon?.Notes ?? ""
                 });
             }
 
