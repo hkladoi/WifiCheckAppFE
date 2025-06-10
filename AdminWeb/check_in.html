@@ -74,18 +74,7 @@
 
     <script src="js/config.js"></script>
     <script src="js/auth.js"></script>
-    <script src="js/check_in.js"></script>
-    <script>
-        // Load header
-        fetch('header_menu.html')
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('header').innerHTML = data;
-                // Initialize header functionality
-                const script = document.createElement('script');
-                script.src = 'js/header.js';
-                document.body.appendChild(script);
-            });
-    </script>
+    <script src="js/header.js" defer></script>
+    <script src="js/check_in.js" defer></script>
 </body>
 </html> 
