@@ -401,11 +401,7 @@ class WiFiManager {
     }
 
     getAuthToken() {
-        // Get token from localStorage, sessionStorage, or cookies
-        // Adjust this based on your authentication implementation
-        return localStorage.getItem('token') || 
-               sessionStorage.getItem('token') || 
-               this.getCookie('token') || '';
+        return auth.getLocalStorageWithExpiry('token') || sessionStorage.getItem('token') || getCookie('token');
     }
 
     getCookie(name) {

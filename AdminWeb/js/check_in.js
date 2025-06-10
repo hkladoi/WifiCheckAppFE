@@ -134,7 +134,7 @@ async function submitCheckIn(notes) {
     const checkInButton = document.getElementById('check-in-btn');
     const checkOutButton = document.getElementById('check-out-btn');
     try {
-        const userEmail = localStorage.getItem('email');
+        const userEmail = auth.getLocalStorageWithExpiry('email');
         if (!userEmail) {
             throw new Error('Không tìm thấy email người dùng. Vui lòng đăng nhập lại.');
         }
@@ -163,7 +163,7 @@ async function submitCheckIn(notes) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${auth.getLocalStorageWithExpiry('token')}`
             },
             body: JSON.stringify({
                 email: userEmail,
@@ -315,6 +315,9 @@ async function initializePage() {
             statusMessage.style.display = 'none'; // Hide any existing message
             checkInButton.disabled = false;
             checkOutButton.disabled = false;
+        }else{
+            checkInButton.disabled = true;
+            checkOutButton.disabled = true;
         }
     });
 
