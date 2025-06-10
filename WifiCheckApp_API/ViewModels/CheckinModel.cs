@@ -11,6 +11,7 @@ namespace WifiCheckApp_API.ViewModels
         public DateTime CheckIn { get; set; }
 
         public string? Notes { get; set; }
+        public string? NoteOut { get; set; }
 
         public int? WifiId { get; set; }
 

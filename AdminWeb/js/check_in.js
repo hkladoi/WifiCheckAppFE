@@ -211,7 +211,7 @@ async function submitCheckOut(notes) {
         const currentCheckOutTime = new Date();
         const { earlyCheckOutMinutes, checkoutStatus } = calculateAttendanceStatus(currentCheckOutTime, 'checkout');
 
-        // Determine typecheck based on time of day for checkout
+        // Determine typecheck based on time of day
         const hours = currentCheckOutTime.getHours();
         const typecheck = hours < 12 ? 1 : 2; // 1 for morning, 2 for afternoon
 
@@ -240,7 +240,7 @@ async function submitCheckOut(notes) {
                 earlyCheckOutMinutes: earlyCheckOutMinutes,
                 checkoutStatus: checkoutStatus,
                 typecheck: typecheck,
-                notes: notes
+                noteout: notes
             })
         });
 

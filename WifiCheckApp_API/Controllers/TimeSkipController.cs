@@ -61,6 +61,7 @@ namespace WifiCheckApp_API.Controllers
                 SessionId = sessionId,
                 CheckInTime = dto.CheckIn,
                 Notes = dto.Notes,
+                NoteOut = dto.NoteOut,
                 WiFiId = dto.WifiId,
                 GpsId = dto.GpsId,
                 CheckInStatus = dto.CheckInStatus,
@@ -113,6 +114,7 @@ namespace WifiCheckApp_API.Controllers
             // Update bản ghi hiện có với thông tin check-out
             existingAttendance.CheckOutTime = dto.CheckOut;
             existingAttendance.Notes = dto.Notes;
+            existingAttendance.NoteOut = dto.NoteOut;
             existingAttendance.WiFiId = dto.WifiId;
             existingAttendance.GpsId = dto.GpsId;
             existingAttendance.CheckOutStatus = dto.checkOutStatus;
