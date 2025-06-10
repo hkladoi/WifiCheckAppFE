@@ -487,7 +487,7 @@ async function processLeaveRequests(action, employeeId, employeeName) {
     showError('Vui lòng chọn ít nhất 1 đơn để xử lý!');
     return;
   }
-  const userId = localStorage.getItem('userId') || localStorage.getItem('employeeId') || localStorage.getItem('id');
+  const userId = auth.getLocalStorageWithExpiry('userId') || auth.getLocalStorageWithExpiry('employeeId') || auth.getLocalStorageWithExpiry('id');
   if (!userId) {
     showError('Không tìm thấy thông tin người duyệt');
     return;

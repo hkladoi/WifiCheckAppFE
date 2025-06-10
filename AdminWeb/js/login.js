@@ -32,28 +32,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const data = await response.json();
 
-      // Lưu token vào localStorage
-      localStorage.setItem("token", data.token);
+      // Lưu các thông tin cần thiết vào localStorage với thời hạn
+      auth.setLocalStorageWithExpiry("token", data.token);
+      auth.setLocalStorageWithExpiry("username", data.username || "");
+      auth.setLocalStorageWithExpiry("role", data.role || "");
+      auth.setLocalStorageWithExpiry("fullName", data.fullName || "");
+      auth.setLocalStorageWithExpiry("userId", String(data.userId || ""));
+      auth.setLocalStorageWithExpiry("email", data.email || "");
 
-       //  Lưu các thông tin cần thiết vào localStorage
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("username", data.username || "");
-      localStorage.setItem("role", data.role || "");
-      localStorage.setItem("fullName", data.fullName || "");
-      localStorage.setItem("userId", String(data.userId || ""));
-      localStorage.setItem("email",data.email)
-
-      //  Chuyển employeeId thành chuỗi nếu là số
+      // Chuyển employeeId thành chuỗi nếu là số
       if (data.employeeId !== undefined && data.employeeId !== null) {
-        localStorage.setItem("employeeId", String(data.employeeId));
+        auth.setLocalStorageWithExpiry("employeeId", String(data.employeeId));
       } else {
         console.warn("Không có employeeId trong phản hồi API.");
       }
+
       alert("Đăng nhập thành công!");
       button.disabled = false;
       button.textContent = "Đăng nhập";
 
-      //  Điều hướng sang trang chính
+      // Điều hướng sang trang chính
       window.location.href = "index.html";
 
     } catch (error) {

@@ -203,7 +203,7 @@ async function submitCheckOut(notes) {
     const checkInButton = document.getElementById('check-in-btn');
     const checkOutButton = document.getElementById('check-out-btn');
     try {
-        const userEmail = localStorage.getItem('email');
+        const userEmail = auth.getLocalStorageWithExpiry('email');
         if (!userEmail) {
             throw new Error('Không tìm thấy email người dùng. Vui lòng đăng nhập lại.');
         }
@@ -232,7 +232,7 @@ async function submitCheckOut(notes) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                'Authorization': `Bearer ${auth.getLocalStorageWithExpiry('token')}`
             },
             body: JSON.stringify({
                 email: userEmail,
@@ -324,11 +324,11 @@ async function initializePage() {
             checkInButton.disabled = true;
             checkOutButton.disabled = true;
 
-            // const userLocation = await getCurrentLocation();
-            const userLocation = {
-                latitude: 21.0304266669616,
-                longitude: 105.76412196764761
-            };
+            const userLocation = await getCurrentLocation();
+            // const userLocation = {
+            //     latitude: 21.0304266669616,
+            //     longitude: 105.76412196764761
+            // };
             let notes = `Chấm công ngoài công ty ở vị trí ${userLocation.latitude.toFixed(6)}, ${userLocation.longitude.toFixed(6)}`;
             
             // Add user's note if checkbox is checked and note is provided
@@ -350,11 +350,11 @@ async function initializePage() {
             checkInButton.disabled = true;
             checkOutButton.disabled = true;
 
-            // const userLocation = await getCurrentLocation();
-            const userLocation = {
-                latitude: 21.0304266669616,
-                longitude: 105.76412196764761
-            };
+            const userLocation = await getCurrentLocation();
+            // const userLocation = {
+            //     latitude: 21.0304266669616,
+            //     longitude: 105.76412196764761
+            // };
             let notes = `Ra về ngoài công ty ở vị trí ${userLocation.latitude.toFixed(6)}, ${userLocation.longitude.toFixed(6)}`;
             
             // Add user's note if checkbox is checked and note is provided

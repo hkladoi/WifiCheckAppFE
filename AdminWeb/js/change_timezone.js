@@ -1,6 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // Check authentication first
+  auth.checkAuth();
+
   const tbody = document.getElementById("days-body");
-  const userId = localStorage.getItem("userId");
+  const userId = auth.getLocalStorageWithExpiry("userId");
   const selectedDateInput = document.getElementById("date");
   const searchButton = document.getElementById("search-button");
   const searchInput = document.getElementById("search-name");
@@ -9,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!userId) {
     alert("Bạn chưa đăng nhập!");
-    window.location.href = "login.html";
+    auth.logout();
     return;
   }
 

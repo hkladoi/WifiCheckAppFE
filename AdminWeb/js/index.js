@@ -1,4 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // Check authentication first
+  auth.checkAuth();
+
   const calendar = document.getElementById("calendar");
   const calendarTitle = document.getElementById("calendar-title");
   const monthSelect = document.getElementById("month-select");
@@ -7,18 +10,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const closeModalBtn = document.getElementById("closeModal");
   const updateForm = document.getElementById("updateForm");
   const timeInputs = document.getElementById("timeInputs");
-  const role = localStorage.getItem("role");
-  const token = localStorage.getItem("token");
-  const employeeIdRaw = localStorage.getItem("employeeId");
+  const role = auth.getLocalStorageWithExpiry("role");
+  const token = auth.getLocalStorageWithExpiry("token");
+  const employeeIdRaw = auth.getLocalStorageWithExpiry("employeeId");
   const employeeId = employeeIdRaw ? parseInt(employeeIdRaw) : null;
-
-  
 
   if (!employeeId) {
     console.error("employeeId không hợp lệ hoặc chưa được lưu trong localStorage");
     alert("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
+    auth.logout();
     return;
-}
+  }
 
   let selectedYear, selectedMonth, selectedDate;
 
