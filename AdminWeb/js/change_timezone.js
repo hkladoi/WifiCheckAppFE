@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <td><input type="time" class="check-in" value="${sessionData?.checkInTime || ""}" /></td>
             <td><input type="time" class="check-out" value="${sessionData?.checkOutTime || ""}" /></td>
             <td><textarea class="notes" readonly>${sessionData?.notes || ""}</textarea></td>
-            <td><textarea class="note-out" readonly>${sessionData?.noteOut || ""}</textarea></td>
+            <td><textarea class="noteOut" readonly>${sessionData?.noteOut || ""}</textarea></td>
             <td><textarea class="reason" placeholder="Nhập lý do" rows="3"></textarea></td>
             <td><button type="button" class="save-btn">Lưu</button></td>
           `;

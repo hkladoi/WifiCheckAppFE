@@ -111,7 +111,7 @@
       border-color: #ddd;
     }
 
-    textarea.notes-out {
+    textarea.noteOut {
       width: 200px;
       padding: 8px;
       border: 1px solid #ddd;
@@ -125,7 +125,7 @@
       cursor: default;
     }
 
-    textarea.notes-out:focus {
+    textarea.noteOut:focus {
       outline: none;
       border-color: #ddd;
     }
