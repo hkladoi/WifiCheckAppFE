@@ -27,10 +27,14 @@
   <div class="search-bar">
     <label for="date">Ngày:</label>
     <input id="date" type="date" />
-<!-- 
-    <button class="btn-search" id="load-data">Tải dữ liệu</button> -->
 
-        <input id="search-name" type="text" placeholder="Nhân viên" />
+    <label for="session">Ca:</label>
+    <select id="session">
+      <option value="1">Sáng</option>
+      <option value="2">Chiều</option>
+    </select>
+
+    <input id="search-name" type="text" placeholder="Nhân viên" />
     <button class="btn-search" id="search-button">Tìm kiếm</button>
   </div>
 </div>
@@ -43,11 +47,10 @@
             <tr>
               <th>STT</th>
               <th>Tên nhân viên</th>
-              <th>Check-in sáng</th>
-              <th>Check-out sáng</th>
-              <th>Check-in chiều</th>
-              <th>Check-out chiều</th>
-              <th>Ghi chú</th>
+              <th>Check-in</th>
+              <th>Check-out</th>
+              <th>Ghi chú vào</th>
+              <th>Ghi chú ra</th>
               <th>Lý do thay đổi</th>
               <th>Hành động</th>
             </tr>

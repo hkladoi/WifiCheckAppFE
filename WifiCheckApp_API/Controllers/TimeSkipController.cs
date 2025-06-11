@@ -637,15 +637,27 @@ namespace WifiCheckApp_API.Controllers
                     EmployeeName = emp.FullName,
                     Date = targetDate.ToString("yyyy-MM-dd"),
 
-                    AttendanceIdMorning = morning?.AttendanceId,
-                    CheckInMorning = morning?.CheckInTime?.ToString("HH:mm") ?? "",
-                    CheckOutMorning = morning?.CheckOutTime?.ToString("HH:mm") ?? "",
+                    // Morning session details
+                    MorningSession = new
+                    {
+                        SessionId = 1,
+                        AttendanceId = morning?.AttendanceId,
+                        CheckInTime = morning?.CheckInTime?.ToString("HH:mm") ?? "",
+                        CheckOutTime = morning?.CheckOutTime?.ToString("HH:mm") ?? "",
+                        Notes = morning?.Notes ?? "",
+                        NoteOut = morning?.NoteOut ?? ""
+                    },
 
-                    AttendanceIdAfternoon = afternoon?.AttendanceId,
-                    CheckInAfternoon = afternoon?.CheckInTime?.ToString("HH:mm") ?? "",
-                    CheckOutAfternoon = afternoon?.CheckOutTime?.ToString("HH:mm") ?? "",
-
-                    Notes = morning?.Notes ?? afternoon?.Notes ?? ""
+                    // Afternoon session details
+                    AfternoonSession = new
+                    {
+                        SessionId = 2,
+                        AttendanceId = afternoon?.AttendanceId,
+                        CheckInTime = afternoon?.CheckInTime?.ToString("HH:mm") ?? "",
+                        CheckOutTime = afternoon?.CheckOutTime?.ToString("HH:mm") ?? "",
+                        Notes = afternoon?.Notes ?? "",
+                        NoteOut = afternoon?.NoteOut ?? ""
+                    }
                 });
             }
 

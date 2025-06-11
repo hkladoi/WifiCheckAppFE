@@ -1,14 +1,13 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // Check authentication first
-  // auth.checkAuth();
-
   const tbody = document.getElementById("days-body");
   const userId = auth.getLocalStorageWithExpiry("userId");
   const selectedDateInput = document.getElementById("date");
   const searchButton = document.getElementById("search-button");
   const searchInput = document.getElementById("search-name");
+  const sessionSelect = document.getElementById("session");
 
-  let searchTerm = ""; // ✅ Khai báo sớm để tránh lỗi ReferenceError
+  let searchTerm = "";
+  let selectedSession = "1"; // Mặc định là ca sáng
 
   if (!userId) {
     alert("Bạn chưa đăng nhập!");
@@ -19,28 +18,34 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("UserID:", userId);
 
   // --- 1. Khi trang load, tự động lấy ngày mới nhất ---
-try {
-  // Lấy ngày hiện tại và format theo định dạng YYYY-MM-DD
-  const latestDate = new Date().toISOString().split('T')[0];
-  
-  selectedDateInput.value = latestDate;
-  loadDataForDate(latestDate, searchTerm);
-} catch (err) {
-  console.error(err);
-  // alert("Không thể lấy ngày hiện tại.");
-}
+  try {
+    const latestDate = new Date().toISOString().split('T')[0];
+    selectedDateInput.value = latestDate;
+    loadDataForDate(latestDate, searchTerm, selectedSession);
+  } catch (err) {
+    console.error(err);
+  }
 
   // --- 2. Khi chọn ngày khác, tải lại dữ liệu ---
   selectedDateInput.addEventListener("change", () => {
     const selectedDate = selectedDateInput.value;
     if (selectedDate) {
-      loadDataForDate(selectedDate, searchTerm);
+      loadDataForDate(selectedDate, searchTerm, selectedSession);
     }
   });
 
-  // --- 3. Search ---
+  // --- 3. Khi chọn ca khác ---
+  sessionSelect.addEventListener("change", () => {
+    selectedSession = sessionSelect.value;
+    const selectedDate = selectedDateInput.value;
+    if (selectedDate) {
+      loadDataForDate(selectedDate, searchTerm, selectedSession);
+    }
+  });
+
+  // --- 4. Search ---
   searchButton.addEventListener("click", () => {
-    searchTerm = searchInput.value.trim().toLowerCase(); // ✅ Cập nhật biến searchTerm toàn cục
+    searchTerm = searchInput.value.trim().toLowerCase();
     const selectedDate = selectedDateInput.value;
 
     if (!selectedDate) {
@@ -48,12 +53,12 @@ try {
       return;
     }
 
-    loadDataForDate(selectedDate, searchTerm);
+    loadDataForDate(selectedDate, searchTerm, selectedSession);
   });
 
   // --- Hàm chính để gọi API lấy dữ liệu chấm công và vẽ bảng ---
-  function loadDataForDate(date, searchTerm = "") {
-    fetch(`https://vinashootapi.live/WebApi/api/TimeSkip/by-date?date=${date}`)
+  function loadDataForDate(date, searchTerm = "", session = "1") {
+    fetch(`https://localhost:5125/api/TimeSkip/by-date?date=${date}`)
       .then(res => {
         if (!res.ok) throw new Error("Lỗi khi tải dữ liệu");
         return res.json();
@@ -61,24 +66,30 @@ try {
       .then(data => {
         tbody.innerHTML = "";
 
-        const filtered = searchTerm
-          ? data.filter(row => row.employeeName.toLowerCase().includes(searchTerm))
-          : data;
+        const filtered = data.filter(row => {
+          const nameMatch = row.employeeName.toLowerCase().includes(searchTerm);
+          const sessionData = session === "1" ? row.morningSession : row.afternoonSession;
+          return nameMatch && sessionData;
+        });
 
         filtered.forEach(row => {
           const tr = document.createElement("tr");
           tr.dataset.employeeId = row.employeeId;
-          tr.dataset.attendanceIdMorning = row.attendanceIdMorning ?? "";
-          tr.dataset.attendanceIdAfternoon = row.attendanceIdAfternoon ?? "";
+          
+          // Lấy dữ liệu theo session đã chọn
+          const sessionData = session === "1" ? row.morningSession : row.afternoonSession;
+          const attendanceId = sessionData?.attendanceId;
+
+          tr.dataset.attendanceId = attendanceId ?? "";
+          tr.dataset.sessionId = session;
 
           tr.innerHTML = `
             <td>${row.stt}</td>
             <td>${row.employeeName}</td>
-            <td><input type="time" class="check-in-morning"    value="${row.checkInMorning || ""}"    /></td>
-            <td><input type="time" class="check-out-morning"   value="${row.checkOutMorning || ""}"   /></td>
-            <td><input type="time" class="check-in-afternoon"  value="${row.checkInAfternoon || ""}"  /></td>
-            <td><input type="time" class="check-out-afternoon" value="${row.checkOutAfternoon || ""}" /></td>
-            <td><textarea class="notes" readonly>${row.notes || ""}</textarea></td>
+            <td><input type="time" class="check-in" value="${sessionData?.checkInTime || ""}" /></td>
+            <td><input type="time" class="check-out" value="${sessionData?.checkOutTime || ""}" /></td>
+            <td><textarea class="notes" readonly>${sessionData?.notes || ""}</textarea></td>
+            <td><textarea class="note-out" readonly>${sessionData?.noteOut || ""}</textarea></td>
             <td><textarea class="reason" placeholder="Nhập lý do" rows="3"></textarea></td>
             <td><button type="button" class="save-btn">Lưu</button></td>
           `;
@@ -102,85 +113,51 @@ try {
         const performedBy = userId;
 
         const employeeId = row.dataset.employeeId;
-        const attendanceIdMorning = row.dataset.attendanceIdMorning;
-        const attendanceIdAfternoon = row.dataset.attendanceIdAfternoon;
+        const attendanceId = row.dataset.attendanceId;
+        const sessionId = row.dataset.sessionId;
 
-        const checkInMorning    = row.querySelector(".check-in-morning").value;
-        const checkOutMorning   = row.querySelector(".check-out-morning").value;
-        const checkInAfternoon  = row.querySelector(".check-in-afternoon").value;
-        const checkOutAfternoon = row.querySelector(".check-out-afternoon").value;
-        const reason            = row.querySelector(".reason").value?.trim();
+        const checkIn = row.querySelector(".check-in").value;
+        const checkOut = row.querySelector(".check-out").value;
+        const reason = row.querySelector(".reason").value?.trim();
 
-        const payloads = [];
-
-        if (checkInMorning || checkOutMorning || reason) {
-          if (attendanceIdMorning) {
-            payloads.push({
-              attendanceId: Number(attendanceIdMorning),
-              checkInTime: checkInMorning ? `${selectedDate}T${checkInMorning}:00` : null,
-              checkOutTime: checkOutMorning ? `${selectedDate}T${checkOutMorning}:00` : null,
-              reason: reason || "",
-              performedBy
-            });
-          } else {
-            payloads.push({
-              employeeId:  Number(employeeId),
-              sessionId:   1,
-              workDate:    selectedDate,
-              checkInTime:  checkInMorning ? `${selectedDate}T${checkInMorning}:00` : null,
-              checkOutTime: checkOutMorning ? `${selectedDate}T${checkOutMorning}:00` : null,
-              reason:      reason || "",
-              performedBy
-            });
-          }
-        }
-
-        if (checkInAfternoon || checkOutAfternoon || reason) {
-          if (attendanceIdAfternoon) {
-            payloads.push({
-              attendanceId: Number(attendanceIdAfternoon),
-              checkInTime: checkInAfternoon ? `${selectedDate}T${checkInAfternoon}:00` : null,
-              checkOutTime: checkOutAfternoon ? `${selectedDate}T${checkOutAfternoon}:00` : null,
-              reason: reason || "",
-              performedBy
-            });
-          } else {
-            payloads.push({
-              employeeId:  Number(employeeId),
-              sessionId:   2,
-              workDate:    selectedDate,
-              checkInTime:  checkInAfternoon ? `${selectedDate}T${checkInAfternoon}:00` : null,
-              checkOutTime: checkOutAfternoon ? `${selectedDate}T${checkOutAfternoon}:00` : null,
-              reason:      reason || "",
-              performedBy
-            });
-          }
-        }
-
-        if (payloads.length === 0) {
+        if (!checkIn && !checkOut && !reason) {
           alert("Không có dữ liệu nào để lưu.");
           return;
         }
 
+        const payload = attendanceId ? {
+          attendanceId: Number(attendanceId),
+          checkInTime: checkIn ? `${selectedDate}T${checkIn}:00` : null,
+          checkOutTime: checkOut ? `${selectedDate}T${checkOut}:00` : null,
+          reason: reason || "",
+          performedBy
+        } : {
+          employeeId: Number(employeeId),
+          sessionId: Number(sessionId),
+          workDate: selectedDate,
+          checkInTime: checkIn ? `${selectedDate}T${checkIn}:00` : null,
+          checkOutTime: checkOut ? `${selectedDate}T${checkOut}:00` : null,
+          reason: reason || "",
+          performedBy
+        };
+
         try {
-          for (const payload of payloads) {
-            const res = await fetch("https://vinashootapi.live/WebApi/api/TimeSkip/adjust", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(payload)
-            });
+          const res = await fetch("https://localhost:5125/api/TimeSkip/adjust", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
 
-            if (!res.ok) {
-              const errorData = await res.text();
-              throw new Error(`Lỗi khi lưu: ${errorData}`);
-            }
-
-            const data = await res.json();
-            console.log("Kết quả từ server:", data);
+          if (!res.ok) {
+            const errorData = await res.text();
+            throw new Error(`Lỗi khi lưu: ${errorData}`);
           }
 
+          const data = await res.json();
+          console.log("Kết quả từ server:", data);
+
           alert("Đã lưu thành công!");
-          loadDataForDate(selectedDate, searchTerm);
+          loadDataForDate(selectedDate, searchTerm, selectedSession);
         } catch (error) {
           console.error(error);
           alert("Không thể lưu dữ liệu. Vui lòng thử lại.");
