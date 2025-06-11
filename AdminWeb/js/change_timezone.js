@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   // Check authentication first
-  auth.checkAuth();
+  // auth.checkAuth();
 
   const tbody = document.getElementById("days-body");
   const userId = auth.getLocalStorageWithExpiry("userId");

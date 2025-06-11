@@ -1,10 +1,10 @@
 document.addEventListener('DOMContentLoaded', async function() {
     // Check if user is logged in
-    const token = auth.getLocalStorageWithExpiry("token");
-    if (!token) {
-        window.location.href = "login.html";
-        return;
-    }
+    // const token = auth.getLocalStorageWithExpiry("token");
+    // if (!token) {
+    //     window.location.href = "login.html";
+    //     return;
+    // }
 
     // Load header menu
     try {

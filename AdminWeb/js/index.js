@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   // Check authentication first
-  auth.checkAuth();
+  // auth.checkAuth();
 
   const calendar = document.getElementById("calendar");
   const calendarTitle = document.getElementById("calendar-title");
