@@ -27,6 +27,8 @@ document.addEventListener("DOMContentLoaded", () => {
         // Lấy lỗi từ API nếu có
         const errorData = await response.text();
         errorMessage.textContent = errorData || "Đăng nhập thất bại.";
+        button.disabled = false;
+        button.textContent = "Đăng nhập";
         return;
       }
 
@@ -57,6 +59,8 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       errorMessage.textContent = "Lỗi kết nối đến server.";
       console.error("Login error:", error);
+      button.disabled = false;
+      button.textContent = "Đăng nhập";
     }
   });
 });

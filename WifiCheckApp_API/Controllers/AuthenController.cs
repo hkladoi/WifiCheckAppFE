@@ -62,50 +62,56 @@ namespace WifiCheckApp_API.Controllers
         }
 
         [HttpPost("login")]
-        public IActionResult Login([FromBody] Login_model_request request)
+        public async Task<IActionResult> Login([FromBody] Login_model_request request)
         {
-            // 1. Lấy user từ DB (include Role + Employee)
-            var user = _context.Users
-                .Include(u => u.Role)
-                .Include(u => u.Employee)
-                .Where(u => u.Username == request.Username && u.IsActive == true)
-                .FirstOrDefault();
-
-            if (user == null)
-                return Unauthorized("Tài khoản không tồn tại hoặc đã bị khóa.");
-
-            // 2. So sánh password
-            if (!VerifyPassword(request.Password, user.Password))
-                return Unauthorized("Mật khẩu không đúng.");
-
-            // 3. Lấy role name
-            var roleNameFromDb = user.Role?.RoleName ?? "Customer";
-
-            var roleName = roleNameFromDb.ToLower() switch
+            try
             {
-                "admin" => "Admin",
-                "customer" => "Customer",
-                _ => roleNameFromDb.ToLower()
-            };
+                var user = await _context.Users.AsNoTracking()
+                    .Include(u => u.Role)
+                    .Include(u => u.Employee)
+                    .FirstOrDefaultAsync(u => u.IsActive == true && u.Username == request.Username || u.Employee.Email == request.Username);
 
-            // 4. Lấy full name, nếu null lấy username luôn
-            var fullname = user.Employee?.FullName ?? user.Username;
+                if (user == null)
+                    return Unauthorized("Tài khoản không tồn tại hoặc đã bị khóa.");
 
-            // 4. Tạo token
-            var token = GenarateJwtToken(user.Username, roleName);
+                // 2. So sánh password
+                if (!VerifyPassword(request.Password, user.Password))
+                    return Unauthorized("Mật khẩu không đúng.");
 
-            //var employeeId = user.Employee?.EmployeeId ?? user.UserId;
-            return Ok(new
+                // 3. Lấy role name
+                var roleNameFromDb = user.Role?.RoleName ?? "Customer";
+
+                var roleName = roleNameFromDb.ToLower() switch
+                {
+                    "admin" => "Admin",
+                    "customer" => "Customer",
+                    _ => roleNameFromDb.ToLower()
+                };
+
+                // 4. Lấy full name, nếu null lấy username luôn
+                var fullname = user.Employee?.FullName ?? user.Username;
+
+                // 4. Tạo token
+                var token = GenarateJwtToken(user.Username, roleName);
+
+                //var employeeId = user.Employee?.EmployeeId ?? user.UserId;
+                return Ok(new
+                {
+                    Token = token,
+                    Username = user.Username,
+                    Role = roleName,
+                    FullName = fullname,
+                    EmployeeId = user.Employee?.EmployeeId,
+                    UserId = user.UserId,
+                    Email = user.Employee?.Email ?? string.Empty
+                });
+            }
+            catch (Exception e)
             {
-                Token = token,
-                Username = user.Username,
-                Role = roleName,
-                FullName = fullname,
-                EmployeeId = user.Employee?.EmployeeId,
-                UserId = user.UserId,
-                Email = user.Employee?.Email ?? string.Empty
-            });
+                return StatusCode(500, "Đã xảy ra lỗi trong quá trình đăng nhập.");
+            }
         }
+
         private static string GetRoleName(string roleNameFromDb)
         {
             if (string.IsNullOrEmpty(roleNameFromDb))
