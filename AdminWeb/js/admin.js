@@ -160,9 +160,9 @@ const loadData = async () => {
           return;
         }
 
-    elements.tableBody.innerHTML = filtered.map(emp => `
+    elements.tableBody.innerHTML = filtered.map((emp, index) => `
       <tr>
-            <td>${emp.employeeId || '-'}</td>
+            <td>${index + 1}</td>
             <td>${emp.fullName}</td>
             <td>${emp.totalWorkingDays}</td>
             <td>${emp.totalPaidLeaves}</td>
@@ -570,4 +570,14 @@ const init = () => {
 };
 
 // Start the application
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener("DOMContentLoaded", () => {
+  const employeeIdRaw = auth.getLocalStorageWithExpiry("employeeId");
+  const employeeId = employeeIdRaw ? parseInt(employeeIdRaw) : null;
+
+  if (!employeeId) {
+    alert("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
+    auth.logout();
+    return;
+  }
+  init();
+});

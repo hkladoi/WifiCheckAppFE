@@ -375,4 +375,14 @@ async function initializePage() {
 }
 
 // Khởi tạo trang khi DOM đã sẵn sàng
-document.addEventListener('DOMContentLoaded', initializePage); 
+document.addEventListener("DOMContentLoaded", () => {
+  const employeeIdRaw = auth.getLocalStorageWithExpiry("employeeId");
+  const employeeId = employeeIdRaw ? parseInt(employeeIdRaw) : null;
+
+  if (!employeeId) {
+    alert("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
+    auth.logout();
+    return;
+  }
+  initializePage();
+}); 

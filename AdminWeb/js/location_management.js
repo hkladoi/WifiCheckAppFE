@@ -421,34 +421,43 @@ class LocationManager {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    const employeeIdRaw = auth.getLocalStorageWithExpiry("employeeId");
+    const employeeId = employeeIdRaw ? parseInt(employeeIdRaw) : null;
+
+    if (!employeeId) {
+        alert("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
+        auth.logout();
+        return;
+    }
+
     new LocationManager();
 
     const modal = document.getElementById('addLocationModal');
-  const modalContent = document.querySelector('.modal-content');
+    const modalContent = document.querySelector('.modal-content');
 
-  modal.addEventListener('click', function (e) {
-    if (!modalContent.contains(e.target)) {
-        e.stopPropagation();
-    }
-  });
+    modal.addEventListener('click', function (e) {
+        if (!modalContent.contains(e.target)) {
+            e.stopPropagation();
+        }
+    });
 });
 
 let loadingInterval = null;
 function showLoadingSpinner() {
-  const spinner = document.getElementById('loadingSpinner');
-  if (!spinner) return;
-  spinner.style.display = 'flex';
-  let dotCount = 1;
-  spinner.textContent = 'Đang tải dữ liệu.';
-  loadingInterval = setInterval(() => {
-    dotCount = (dotCount % 3) + 1;
-    spinner.textContent = 'Đang tải dữ liệu' + '.'.repeat(dotCount);
-  }, 400);
+    const spinner = document.getElementById('loadingSpinner');
+    if (!spinner) return;
+    spinner.style.display = 'flex';
+    let dotCount = 1;
+    spinner.textContent = 'Đang tải dữ liệu.';
+    loadingInterval = setInterval(() => {
+        dotCount = (dotCount % 3) + 1;
+        spinner.textContent = 'Đang tải dữ liệu' + '.'.repeat(dotCount);
+    }, 400);
 }
 function hideLoadingSpinner() {
-  const spinner = document.getElementById('loadingSpinner');
-  if (!spinner) return;
-  spinner.style.display = 'none';
-  spinner.textContent = 'Đang tải dữ liệu';
-  if (loadingInterval) clearInterval(loadingInterval);
+    const spinner = document.getElementById('loadingSpinner');
+    if (!spinner) return;
+    spinner.style.display = 'none';
+    spinner.textContent = 'Đang tải dữ liệu';
+    if (loadingInterval) clearInterval(loadingInterval);
 }

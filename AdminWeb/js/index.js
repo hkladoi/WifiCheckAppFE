@@ -16,7 +16,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const employeeId = employeeIdRaw ? parseInt(employeeIdRaw) : null;
 
   if (!employeeId) {
-    console.error("employeeId không hợp lệ hoặc chưa được lưu trong localStorage");
     alert("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
     auth.logout();
     return;
@@ -193,7 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     try {
-      const res = await fetch(`${API_BASE_URL}/WebApi/api/TimeSkip/submit-leave`, {
+      const res = await fetch(`${API_BASE_URL}/TimeSkip/submit-leave`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

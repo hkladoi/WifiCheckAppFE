@@ -414,6 +414,15 @@ class WiFiManager {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    const employeeIdRaw = auth.getLocalStorageWithExpiry("employeeId");
+    const employeeId = employeeIdRaw ? parseInt(employeeIdRaw) : null;
+
+    if (!employeeId) {
+        alert("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
+        auth.logout();
+        return;
+    }
+
     new WiFiManager();
 
     const modal = document.getElementById('addWifiModal');

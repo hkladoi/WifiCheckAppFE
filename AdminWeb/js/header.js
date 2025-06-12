@@ -36,12 +36,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         // Add click event for logout
-        const logoutBtn = document.getElementById('logout-btn');
+        const logoutBtn = document.getElementById('logout');
         if (logoutBtn) {
             logoutBtn.addEventListener('click', function(e) {
                 e.preventDefault();
-                auth.clearLocalStorage();
-                window.location.href = "login.html";
+                auth.logout();
             });
         }
     } catch (error) {

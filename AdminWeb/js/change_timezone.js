@@ -1,4 +1,13 @@
 document.addEventListener("DOMContentLoaded", () => {
+  const employeeIdRaw = auth.getLocalStorageWithExpiry("employeeId");
+  const employeeId = employeeIdRaw ? parseInt(employeeIdRaw) : null;
+
+  if (!employeeId) {
+    alert("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
+    auth.logout();
+    return;
+  }
+
   const tbody = document.getElementById("days-body");
   const userId = auth.getLocalStorageWithExpiry("userId");
   const selectedDateInput = document.getElementById("date");
@@ -8,12 +17,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let searchTerm = "";
   let selectedSession = "1"; // Mặc định là ca sáng
-
-  if (!userId) {
-    alert("Bạn chưa đăng nhập!");
-    auth.logout();
-    return;
-  }
 
   console.log("UserID:", userId);
 
@@ -58,7 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Hàm chính để gọi API lấy dữ liệu chấm công và vẽ bảng ---
   function loadDataForDate(date, searchTerm = "", session = "1") {
-    fetch(`https://localhost:5125/api/TimeSkip/by-date?date=${date}`)
+    fetch(`${API_BASE_URL}/TimeSkip/by-date?date=${date}`)
       .then(res => {
         if (!res.ok) throw new Error("Lỗi khi tải dữ liệu");
         return res.json();
@@ -142,7 +145,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         try {
-          const res = await fetch("https://localhost:5125/api/TimeSkip/adjust", {
+          const res = await fetch(`${API_BASE_URL}/TimeSkip/adjust`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
