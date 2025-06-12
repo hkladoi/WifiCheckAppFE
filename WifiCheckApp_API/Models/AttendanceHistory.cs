@@ -19,6 +19,8 @@ public partial class AttendanceHistory
 
     public string? NewValue { get; set; }
 
+    public string? Notes { get; set; }
+
     public virtual Attendance? Attendance { get; set; }
 
     public virtual User? PerformedByNavigation { get; set; }

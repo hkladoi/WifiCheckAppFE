@@ -3,8 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WifiCheckApp_API.Models;
 using WifiCheckApp_API.ViewModels;
-using System.Collections.Generic;
-using Azure.Core;
 
 namespace WifiCheckApp_API.Controllers
 {
@@ -668,7 +666,7 @@ namespace WifiCheckApp_API.Controllers
         [HttpPost("adjust")]
         public async Task<IActionResult> AdjustAttendance([FromBody] Save_ChangeTimeZone_model dto)
         {
-            // Nếu AttendanceId được truyền: thực hiện cập nhật như cũ
+            // Nếu AttendanceId được truyền: thực hiện cập nhật
             if (dto.AttendanceId > 0)
             {
                 var attendance = await _context.Attendances.FindAsync(dto.AttendanceId);
@@ -693,23 +691,23 @@ namespace WifiCheckApp_API.Controllers
 
                 if (oldCheckIn != newCheckIn)
                 {
-                    history.OldValue += $"CheckIn: {oldCheckIn} | ";
-                    history.NewValue += $"CheckIn: {newCheckIn} | ";
+                    history.OldValue += $"CheckIn: {oldCheckIn}";
+                    history.NewValue += $"CheckIn: {newCheckIn}";
                     attendance.CheckInTime = dto.CheckInTime;
                     isChanged = true;
                 }
 
                 if (oldCheckOut != newCheckOut)
                 {
-                    history.OldValue += $"CheckOut: {oldCheckOut} | ";
-                    history.NewValue += $"CheckOut: {newCheckOut} | ";
+                    history.OldValue += $"CheckOut: {oldCheckOut}";
+                    history.NewValue += $"CheckOut: {newCheckOut}";
                     attendance.CheckOutTime = dto.CheckOutTime;
                     isChanged = true;
                 }
 
                 if (!string.IsNullOrWhiteSpace(dto.Reason))
                 {
-                    history.NewValue += $"Lý do: {dto.Reason}";
+                    history.Notes = dto.Reason;
                     isChanged = true;
                 }
 
@@ -728,6 +726,18 @@ namespace WifiCheckApp_API.Controllers
                 if (dto.EmployeeId == null || dto.SessionId == null || dto.WorkDate == null)
                     return BadRequest("Thiếu thông tin để tạo mới chấm công.");
 
+                // Kiểm tra xem đã có bản ghi cho nhân viên này trong ngày và ca này chưa
+                var existingAttendance = await _context.Attendances
+                    .FirstOrDefaultAsync(a =>
+                        a.EmployeeId == dto.EmployeeId &&
+                        a.WorkDate == dto.WorkDate &&
+                        a.SessionId == dto.SessionId);
+
+                if (existingAttendance != null)
+                {
+                    return BadRequest("Đã tồn tại bản ghi chấm công cho nhân viên này trong ca này.");
+                }
+
                 var newAttendance = new Attendance
                 {
                     EmployeeId = dto.EmployeeId.Value,
@@ -738,25 +748,22 @@ namespace WifiCheckApp_API.Controllers
                 };
 
                 _context.Attendances.Add(newAttendance);
-                await _context.SaveChangesAsync(); // để có AttendanceId sau khi insert
+                await _context.SaveChangesAsync();
 
-                if (!string.IsNullOrWhiteSpace(dto.Reason))
+                var history = new AttendanceHistory
                 {
-                    var history = new AttendanceHistory
-                    {
-                        AttendanceId = newAttendance.AttendanceId,
-                        ActionType = "Insert",
-                        PerformedBy = dto.PerformedBy,
-                        PerformedAt = DateTime.Now,
-                        OldValue = "",
-                        NewValue = $"CheckIn: {dto.CheckInTime?.ToString("HH:mm") ?? ""} | " +
-                                   $"CheckOut: {dto.CheckOutTime?.ToString("HH:mm") ?? ""} | " +
-                                   $"Lý do: {dto.Reason}"
-                    };
+                    AttendanceId = newAttendance.AttendanceId,
+                    ActionType = "Insert",
+                    PerformedBy = dto.PerformedBy,
+                    PerformedAt = DateTime.Now,
+                    OldValue = "",
+                    NewValue = $"CheckIn: {dto.CheckInTime?.ToString("HH:mm") ?? ""} | " +
+                               $"CheckOut: {dto.CheckOutTime?.ToString("HH:mm") ?? ""} | ",
+                    Notes = dto.Reason
+                };
 
-                    _context.AttendanceHistories.Add(history);
-                    await _context.SaveChangesAsync();
-                }
+                _context.AttendanceHistories.Add(history);
+                await _context.SaveChangesAsync();
 
                 return Ok(new { message = "Tạo mới thành công", newAttendanceId = newAttendance.AttendanceId });
             }

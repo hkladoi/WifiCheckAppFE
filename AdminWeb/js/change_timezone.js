@@ -133,7 +133,8 @@ document.addEventListener("DOMContentLoaded", () => {
           checkInTime: checkIn ? `${selectedDate}T${checkIn}:00` : null,
           checkOutTime: checkOut ? `${selectedDate}T${checkOut}:00` : null,
           reason: reason || "",
-          performedBy
+          performedBy,
+          sessionId: Number(sessionId)
         } : {
           employeeId: Number(employeeId),
           sessionId: Number(sessionId),

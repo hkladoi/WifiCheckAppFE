@@ -82,7 +82,7 @@ public partial class TimeLapsContext : DbContext
 
         modelBuilder.Entity<AttendanceHistory>(entity =>
         {
-            entity.HasKey(e => e.HistoryId).HasName("PK__Attendan__4D7B4ADD3979FEBE");
+            entity.HasKey(e => e.HistoryId).HasName("PK__Attendan__4D7B4ADD96A7A634");
 
             entity.ToTable("AttendanceHistory");
 
@@ -99,12 +99,12 @@ public partial class TimeLapsContext : DbContext
 
             entity.HasOne(d => d.PerformedByNavigation).WithMany(p => p.AttendanceHistories)
                 .HasForeignKey(d => d.PerformedBy)
-                .HasConstraintName("FK__Attendanc__Perfo__6477ECF3");
+                .HasConstraintName("FK__Attendanc__Perfo__2F10007B");
         });
 
         modelBuilder.Entity<AttendanceSession>(entity =>
         {
-            entity.HasKey(e => e.SessionId).HasName("PK__Attendan__C9F49290A3F559FA");
+            entity.HasKey(e => e.SessionId).HasName("PK__Attendan__C9F49290CA41DE53");
 
             entity.ToTable("AttendanceSession");
 
@@ -141,7 +141,7 @@ public partial class TimeLapsContext : DbContext
 
         modelBuilder.Entity<GpsLocation>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__GpsLocat__3214EC07461C8999");
+            entity.HasKey(e => e.Id).HasName("PK__GpsLocat__3214EC07773CC886");
 
             entity.ToTable("GpsLocation");
 
@@ -151,7 +151,7 @@ public partial class TimeLapsContext : DbContext
 
         modelBuilder.Entity<LeaveRequest>(entity =>
         {
-            entity.HasKey(e => e.LeaveId).HasName("PK__LeaveReq__796DB979F322F20F");
+            entity.HasKey(e => e.LeaveId).HasName("PK__LeaveReq__796DB979E2EDD449");
 
             entity.Property(e => e.LeaveId).HasColumnName("LeaveID");
             entity.Property(e => e.EmployeeId).HasColumnName("EmployeeID");
@@ -185,7 +185,7 @@ public partial class TimeLapsContext : DbContext
 
         modelBuilder.Entity<LeaveType>(entity =>
         {
-            entity.HasKey(e => e.LeaveTypeId).HasName("PK__LeaveTyp__43BE8FF4C8EB9248");
+            entity.HasKey(e => e.LeaveTypeId).HasName("PK__LeaveTyp__43BE8FF468E0CD0E");
 
             entity.Property(e => e.LeaveTypeId).HasColumnName("LeaveTypeID");
             entity.Property(e => e.Description).HasMaxLength(255);
@@ -194,7 +194,7 @@ public partial class TimeLapsContext : DbContext
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE3A2B70E1D7");
+            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE3ABAB48954");
 
             entity.Property(e => e.RoleId).HasColumnName("RoleID");
             entity.Property(e => e.Description).HasMaxLength(255);
@@ -203,9 +203,9 @@ public partial class TimeLapsContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CCACCD44D3F2");
+            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CCAC536B2D25");
 
-            entity.HasIndex(e => e.Username, "UQ__Users__536C85E4D8CCE61E").IsUnique();
+            entity.HasIndex(e => e.Username, "UQ__Users__536C85E44F125296").IsUnique();
 
             entity.Property(e => e.UserId).HasColumnName("UserID");
             entity.Property(e => e.CreatedAt)
@@ -223,12 +223,12 @@ public partial class TimeLapsContext : DbContext
 
             entity.HasOne(d => d.Role).WithMany(p => p.Users)
                 .HasForeignKey(d => d.RoleId)
-                .HasConstraintName("FK__Users__RoleID__6A30C649");
+                .HasConstraintName("FK__Users__RoleID__38996AB5");
         });
 
         modelBuilder.Entity<WiFiBssid>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__WiFiBSSI__3214EC07F3FC61EC");
+            entity.HasKey(e => e.Id).HasName("PK__WiFiBSSI__3214EC077324EB20");
 
             entity.ToTable("WiFiBSSID");
 
@@ -238,12 +238,12 @@ public partial class TimeLapsContext : DbContext
 
             entity.HasOne(d => d.WiFi).WithMany(p => p.WiFiBssids)
                 .HasForeignKey(d => d.WiFiId)
-                .HasConstraintName("FK__WiFiBSSID__WiFiI__6C190EBB");
+                .HasConstraintName("FK__WiFiBSSID__WiFiI__3A81B327");
         });
 
         modelBuilder.Entity<WiFiLocation>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__WiFiLoca__3214EC07C881C7DD");
+            entity.HasKey(e => e.Id).HasName("PK__WiFiLoca__3214EC07184412B7");
 
             entity.ToTable("WiFiLocation");
 
