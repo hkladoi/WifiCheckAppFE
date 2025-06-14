@@ -4,6 +4,7 @@ namespace WifiCheckApp_API.ViewModels
 {
     public class EmployeeModel
     {
+        public int UserId { get; set; }
         public int? EmployeeId { get; set; }
         public string UserName { get; set; }
 

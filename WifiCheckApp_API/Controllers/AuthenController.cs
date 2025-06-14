@@ -1,9 +1,10 @@
-﻿using System.Data;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.Data;
@@ -12,6 +13,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using WifiCheckApp_API.Models;
 using WifiCheckApp_API.ViewModels;
+using ResetPasswordRequest = WifiCheckApp_API.ViewModels.ResetPasswordRequest;
 
 namespace WifiCheckApp_API.Controllers
 {
@@ -176,7 +178,6 @@ namespace WifiCheckApp_API.Controllers
             }
         }
 
-        // Updated method using BCrypt for password verification
         private bool VerifyPassword(string plainPassword, string hashedPassword)
         {
             try
@@ -189,7 +190,6 @@ namespace WifiCheckApp_API.Controllers
             }
         }
 
-        //// Updated method using BCrypt for password hashing
         private string HashPassword(string password)
         {
             // Generate salt and hash password with BCrypt
@@ -215,6 +215,7 @@ namespace WifiCheckApp_API.Controllers
             var roleName = GetRoleName(user.Role?.RoleName);
             return Ok(new EmployeeModel
             {
+                UserId = user.UserId,
                 EmployeeId = user.EmployeeId,
                 Email = user.Employee?.Email,
                 DateOfBirth = user.Employee?.DateOfBirth,
@@ -286,6 +287,7 @@ namespace WifiCheckApp_API.Controllers
 
 
         [HttpPost("CreateMultiUser")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> CreateMultiUser([FromBody] List<UserCreateDto> users)
         {
             if (users == null || users.Count == 0)
@@ -334,5 +336,105 @@ namespace WifiCheckApp_API.Controllers
             return Ok("Tạo người dùng thành công.");
         }
 
+        [HttpPost("ResetPasswordDefault")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ResetPasswordDefault(int userId)
+        {
+            if (userId <= 0)
+            {
+                return BadRequest("Thông tin không hợp lệ.");
+            }
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId && u.IsActive == true);
+            if (user == null)
+            {
+                return NotFound("Không tìm thấy người dùng với UserId này.");
+            }
+
+            user.Password = HashPassword("123456");
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+            return Ok("Đặt lại mật khẩu thành công.");
+        }
+
+        [HttpGet("GetAllEmployee")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllEmployee()
+        {
+            try
+            {
+                var employeeData = await _context.Employees.Include(c => c.Users).ThenInclude(c => c.Role).ToListAsync();
+                if (employeeData.Count == 0)
+                {
+                    return NotFound("Không tìm thấy nhân viên nào.");
+                }
+                var lstEmployee = new List<EmployeeModel>();
+                foreach (var employee in employeeData)
+                {
+                    var userName = employee.Users.FirstOrDefault()?.Username ?? string.Empty;
+                    var userId = employee.Users.FirstOrDefault()?.UserId ?? 0;
+                    var data = new EmployeeModel()
+                    {
+                        UserId = userId,
+                        EmployeeId = employee.EmployeeId,
+                        Email = employee.Email,
+                        DateOfBirth = employee.DateOfBirth,
+                        Department = employee.Department,
+                        FullName = employee.FullName,
+                        Gender = employee.Gender,
+                        HireDate = employee.HireDate,
+                        IsActive = employee.IsActive,
+                        Phone = employee.Phone,
+                        Position = employee.Position,
+                        UserName = userName,
+                    };
+                    lstEmployee.Add(data);
+                }
+                if (lstEmployee.Count == 0)
+                {
+                    return NotFound("Không tìm thấy nhân viên nào.");
+                }
+                return Ok(lstEmployee);
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, "Đã xảy ra lỗi trong quá trình lấy dữ liệu nhân viên");
+            }
+        }
+
+        [HttpPut("UpdateEmployee")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateEmployee(EmployeeModel model)
+        {
+            try
+            {
+                if (model.EmployeeId <= 0)
+                {
+                    return BadRequest("Thông tin không hợp lệ.");
+                }
+                var employee = await _context.Employees.FirstOrDefaultAsync(e => e.EmployeeId == model.EmployeeId && e.IsActive == true);
+                if (employee == null)
+                {
+                    return NotFound("Không tìm thấy nhân viên với EmployeeId này.");
+                }
+
+                employee.FullName = model.FullName;
+                employee.Gender = model.Gender;
+                employee.DateOfBirth = model.DateOfBirth;
+                employee.Email = model.Email;
+                employee.Phone = model.Phone;
+                employee.Department = model.Department;
+                employee.Position = model.Position;
+                employee.HireDate = model.HireDate;
+                employee.IsActive = model.IsActive;
+
+                _context.Employees.Update(employee);
+                await _context.SaveChangesAsync();
+                return Ok("Cập nhật thông tin nhân viên thành công.");
+            }
+            catch (Exception e)
+            {
+                return StatusCode(500, "Đã xảy ra lỗi trong quá trình cập nhật thông tin nhân viên.");
+            }
+        }
     }
 }

@@ -54,14 +54,27 @@
             <i class="fas fa-clock"></i>
             Điều chỉnh chấm công
           </button>
-          <a href="wifi_management.html" class="btn-change" aria-label="Thêm wifi chấm công">
-            <i class="fas fa-wifi"></i>
-            Thêm wifi chấm công
-          </a>
-          <a href="location_management.html" class="btn-change" aria-label="Thêm vị trí chấm công">
-            <i class="fas fa-map-marker-alt"></i>
-            Thêm vị trí chấm công
-          </a>
+          <div class="dropdown">
+            <button class="btn-change dropdown-toggle" aria-label="Quản lý hệ thống">
+              <i class="fas fa-cog"></i>
+              Quản lý hệ thống
+              <i class="fas fa-chevron-down"></i>
+            </button>
+            <div class="dropdown-menu">
+              <a href="wifi_management.html" class="dropdown-item">
+                <i class="fas fa-wifi"></i>
+                Thêm wifi chấm công
+              </a>
+              <a href="location_management.html" class="dropdown-item">
+                <i class="fas fa-map-marker-alt"></i>
+                Thêm vị trí chấm công
+              </a>
+              <a href="user_management.html" class="dropdown-item">
+                <i class="fas fa-users"></i>
+                Quản lý người dùng
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </section>
