@@ -12,6 +12,8 @@ namespace WifiCheckApp_API.Controllers
     {
         private readonly ILogger<TimeSkipController> _logger;
         private readonly TimeLapsContext _context;
+        private const int MAX_TIME_DIFFERENCE_MINUTES = 1;
+        private static readonly TimeZoneInfo VietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
 
         public TimeSkipController(ILogger<TimeSkipController> logger, TimeLapsContext context)
         {
@@ -19,11 +21,40 @@ namespace WifiCheckApp_API.Controllers
             _context = context;
         }
 
+        private (bool isValid, string message) IsTimeValid(DateTime clientTime)
+        {
+            // Convert client time to Vietnam timezone
+            var clientTimeVN = TimeZoneInfo.ConvertTime(clientTime, VietnamTimeZone);
+
+            // Get server time in Vietnam timezone
+            var serverTimeVN = TimeZoneInfo.ConvertTime(DateTime.Now, VietnamTimeZone);
+
+            var timeDifference = Math.Abs((clientTimeVN - serverTimeVN).TotalMinutes);
+
+            // Log the time difference for monitoring
+            _logger.LogInformation($"Time difference between client and server: {timeDifference} minutes");
+
+            if (timeDifference > MAX_TIME_DIFFERENCE_MINUTES)
+            {
+                var message = "Thời gian không hợp lệ";
+                return (false, message);
+            }
+
+            return (true, string.Empty);
+        }
+
         [HttpPost("checkin")]
         public async Task<IActionResult> CheckIn([FromBody] CheckinModel dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
+
+            // Validate time difference
+            var (isValid, message) = IsTimeValid(dto.CheckIn);
+            if (!isValid)
+            {
+                return BadRequest(message);
+            }
 
             var employee = await _context.Employees
                 .FirstOrDefaultAsync(e => e.Email == dto.Email && e.IsActive == true);
@@ -83,6 +114,13 @@ namespace WifiCheckApp_API.Controllers
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
+
+            // Validate time difference
+            var (isValid, message) = IsTimeValid(dto.CheckOut);
+            if (!isValid)
+            {
+                return BadRequest(message);
+            }
 
             var employee = await _context.Employees
                 .FirstOrDefaultAsync(e => e.Email == dto.Email && e.IsActive == true);
@@ -401,12 +439,6 @@ namespace WifiCheckApp_API.Controllers
             return workingDay;
         }
 
-        private DateTime GetDateTimeLocal(DateTime dateTime)
-        {
-            var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-            return TimeZoneInfo.ConvertTimeFromUtc(dateTime, vnTimeZone);
-        }
-
         [HttpGet("summary")]
         public IActionResult GetAttendanceSummary([FromQuery] string month)
         {
@@ -483,8 +515,6 @@ namespace WifiCheckApp_API.Controllers
             return Ok(result);
         }
 
-
-
         [HttpGet("leave-types")]
         public async Task<IActionResult> GetLeaveTypes()
         {
@@ -500,7 +530,6 @@ namespace WifiCheckApp_API.Controllers
             }).ToList();
             return Ok(result);
         }
-
 
         [HttpPost("convert-unpaid")]
         public async Task<IActionResult> ConvertUnpaid([FromBody] Convert_request_model request)
@@ -539,7 +568,6 @@ namespace WifiCheckApp_API.Controllers
                     : $"{attendances.Count} đơn đã bị từ chối."
             });
         }
-
 
         [HttpPost("submit-leave")]
         public async Task<IActionResult> SubmitLeave([FromBody] LeaveRequestModel request)
