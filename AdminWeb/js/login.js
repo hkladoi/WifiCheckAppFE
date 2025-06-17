@@ -2,6 +2,25 @@ document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("login-form");
   const errorMessage = document.getElementById("error-message");
   
+  // Toast notification function
+  function showToast(message, type = 'success') {
+    const toast = document.getElementById('error-toast');
+    const msg = document.getElementById('error-message');
+    if (!toast || !msg) return;
+    msg.textContent = message;
+    toast.classList.remove('hidden', 'toast-error', 'toast-success');
+    toast.classList.add(type === 'success' ? 'toast-success' : 'toast-error');
+    toast.classList.add('toast');
+    setTimeout(() => {
+      toast.classList.add('hidden');
+    }, 3000);
+    // Đóng bằng nút X
+    const closeBtn = toast.querySelector('.toast-close');
+    if (closeBtn) {
+      closeBtn.onclick = () => toast.classList.add('hidden');
+    }
+  }
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
@@ -26,7 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!response.ok) {
         // Lấy lỗi từ API nếu có
         const errorData = await response.text();
-        errorMessage.textContent = errorData || "Đăng nhập thất bại.";
+        showToast(errorData || "Đăng nhập thất bại.", 'error');
         button.disabled = false;
         button.textContent = "Đăng nhập";
         return;
@@ -49,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.warn("Không có employeeId trong phản hồi API.");
       }
 
-      alert("Đăng nhập thành công!");
+      showToast("Đăng nhập thành công!", 'success');
       button.disabled = false;
       button.textContent = "Đăng nhập";
 
@@ -57,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
       window.location.href = "index.html";
 
     } catch (error) {
-      errorMessage.textContent = "Lỗi kết nối đến server.";
+      showToast("Lỗi kết nối đến server.", 'error');
       console.error("Login error:", error);
       button.disabled = false;
       button.textContent = "Đăng nhập";

@@ -275,7 +275,6 @@ namespace WifiCheckApp_API.Controllers
 
             if (string.IsNullOrWhiteSpace(workDate))
             {
-                // Không truyền date → tự lấy ngày WorkDate mới nhất có trong dữ liệu
                 var latestWorkDate = _context.Attendances
                     .OrderByDescending(a => a.WorkDate)
                     .Select(a => a.WorkDate)
@@ -311,6 +310,7 @@ namespace WifiCheckApp_API.Controllers
             var attendanceRecords = _context.Attendances
                 .Where(a => a.WorkDate == targetDateOnly)
                 .Include(a => a.Session)
+                .Include(a => a.AttendanceHistories)
                 .ToList();
 
             var result = new List<object>();
@@ -341,7 +341,11 @@ namespace WifiCheckApp_API.Controllers
                         CheckInTime = morning?.CheckInTime?.ToString("HH:mm") ?? "",
                         CheckOutTime = morning?.CheckOutTime?.ToString("HH:mm") ?? "",
                         Notes = morning?.Notes ?? "",
-                        NoteOut = morning?.NoteOut ?? ""
+                        NoteOut = morning?.NoteOut ?? "",
+                        LatestHistoryNote = morning?.AttendanceHistories
+                            .OrderByDescending(h => h.PerformedAt)
+                            .Select(h => h.Notes)
+                            .FirstOrDefault() ?? ""
                     },
 
                     // Afternoon session details
@@ -352,7 +356,11 @@ namespace WifiCheckApp_API.Controllers
                         CheckInTime = afternoon?.CheckInTime?.ToString("HH:mm") ?? "",
                         CheckOutTime = afternoon?.CheckOutTime?.ToString("HH:mm") ?? "",
                         Notes = afternoon?.Notes ?? "",
-                        NoteOut = afternoon?.NoteOut ?? ""
+                        NoteOut = afternoon?.NoteOut ?? "",
+                        LatestHistoryNote = afternoon?.AttendanceHistories
+                            .OrderByDescending(h => h.PerformedAt)
+                            .Select(h => h.Notes)
+                            .FirstOrDefault() ?? ""
                     }
                 });
             }

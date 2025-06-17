@@ -33,7 +33,7 @@ namespace WifiCheckApp_API.Controllers
             // Get server time in Vietnam timezone
             var serverTimeVN = TimeZoneInfo.ConvertTime(DateTime.Now, VietnamTimeZone);
 
-            var timeDifference = Math.Abs((clientTimeVN - serverTimeVN).TotalMinutes);
+            var timeDifference = Math.Abs((clientTime - serverTimeVN).TotalMinutes);
 
             // Log the time difference for monitoring
             _logger.LogInformation($"Time difference between client and server: {timeDifference} minutes");

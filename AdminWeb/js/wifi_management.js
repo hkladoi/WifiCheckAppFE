@@ -414,14 +414,6 @@ class WiFiManager {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    // const employeeIdRaw = auth.getLocalStorageWithExpiry("employeeId");
-    // const employeeId = employeeIdRaw ? parseInt(employeeIdRaw) : null;
-
-    if (!auth.isAuthenticated()) {
-        alert("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
-        auth.logout();
-        return;
-    }
 
     new WiFiManager();
 
@@ -453,4 +445,30 @@ function hideLoadingSpinner() {
   spinner.style.display = 'none';
   spinner.textContent = 'Đang tải dữ liệu';
   if (loadingInterval) clearInterval(loadingInterval);
+}
+
+// Toast notification function
+function showToast(message, type = 'success') {
+  const toast = document.getElementById('error-toast');
+  const msg = document.getElementById('error-message');
+  if (!toast || !msg) return;
+  msg.textContent = message;
+  toast.classList.remove('hidden', 'toast-error', 'toast-success');
+  toast.classList.add(type === 'success' ? 'toast-success' : 'toast-error');
+  toast.classList.add('toast');
+  setTimeout(() => {
+    toast.classList.add('hidden');
+  }, 3000);
+  // Đóng bằng nút X
+  const closeBtn = toast.querySelector('.toast-close');
+  if (closeBtn) {
+    closeBtn.onclick = () => toast.classList.add('hidden');
+  }
+}
+
+// Replace alert with showToast
+if (!userInfo) {
+  showToast("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.", 'error');
+  window.location.href = "login.html";
+  return;
 }

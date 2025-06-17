@@ -57,7 +57,7 @@ public partial class TimeLapsContext : DbContext
             entity.Property(e => e.EmployeeId).HasColumnName("EmployeeID");
             entity.Property(e => e.LeaveType).HasMaxLength(50);
             entity.Property(e => e.NoteOut)
-                .HasMaxLength(255)
+                .HasMaxLength(200)
                 .IsUnicode(false);
             entity.Property(e => e.Notes).HasMaxLength(200);
             entity.Property(e => e.Status).HasMaxLength(50);

@@ -6,41 +6,64 @@ document.addEventListener("DOMContentLoaded", () => {
   const calendarTitle = document.getElementById("calendar-title");
   const monthSelect = document.getElementById("month-select");
   const yearSelect = document.getElementById("year-select");
+  const employeeSelect = document.getElementById("employee-select");
+  const employeeSelectLabel = document.getElementById("employee-select-label");
   const modal = document.getElementById("updateModal");
   const closeModalBtn = document.getElementById("closeModal");
   const updateForm = document.getElementById("updateForm");
-  const timeInputs = document.getElementById("timeInputs");
   const role = auth.getLocalStorageWithExpiry("role");
   const token = auth.getLocalStorageWithExpiry("token");
   const employeeIdRaw = auth.getLocalStorageWithExpiry("employeeId");
   const employeeId = employeeIdRaw ? parseInt(employeeIdRaw) : null;
 
-  if (!auth.isAuthenticated()) {
-    alert("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
-    auth.logout();
-    return;
-  }
-
-  let selectedYear, selectedMonth, selectedDate;
+  let selectedYear, selectedMonth, selectedDate, currentEmployeeId = employeeId;
 
   closeModalBtn.onclick = () => modal.style.display = "none";
   window.onclick = e => { if (e.target === modal) modal.style.display = "none"; };
 
-  document.querySelectorAll('input[name="status"]').forEach(radio => {
-    radio.addEventListener("change", () => {
-      if (!timeInputs) return;
+  async function fetchAllEmployees() {
+    if (role !== "Admin") {
+      employeeSelect.style.display = "none";
+      employeeSelectLabel.style.display = "none";
+      return;
+    }
 
-      if (radio.value === "Normal" && radio.checked) {
-        timeInputs.style.display = "block";
-      } else if (radio.checked) {
-        timeInputs.style.display = "none";
-        ["morningCheckIn", "morningCheckOut", "afternoonCheckIn", "afternoonCheckOut"].forEach(id => {
-          const input = document.getElementById(id);
-          if (input) input.value = "";
-        });
+    employeeSelect.style.display = "inline-block";
+    employeeSelectLabel.style.display = "inline-block";
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/Admin/GetAllEmployee`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (!response.ok) {
+        console.error("API error fetching employees:", response.status);
+        showToast(`Lỗi khi lấy danh sách nhân viên: ${response.status}`, 'error');
+        return;
       }
-    });
-  });
+
+      const employees = await response.json();
+      employeeSelect.innerHTML = ""; 
+
+      employees.forEach(emp => {
+        const opt = document.createElement("option");
+        opt.value = emp.employeeId;
+        opt.textContent = emp.fullName;
+        employeeSelect.appendChild(opt);
+      });
+
+      if (employeeId) {
+        employeeSelect.value = employeeId;
+      }
+      currentEmployeeId = +employeeSelect.value; 
+    } catch (err) {
+      console.error("Fetch employees failed:", err);
+      showToast("Lỗi kết nối API lấy danh sách nhân viên", 'error');
+    }
+  }
 
   function populateMonthYearSelectors() {
     for (let y = 2020; y <= 2030; y++) {
@@ -67,10 +90,12 @@ document.addEventListener("DOMContentLoaded", () => {
     return `${year}-${month}-${day}`;
   }
 
-  async function generateCalendar(year, month) {
+  async function generateCalendar(year, month, empId) {
     calendar.innerHTML = "";
 
-    const apiUrl = `${API_BASE_URL}/TimeSkip/attendances/summary-employee?employeeId=${employeeId}&month=${month + 1}&year=${year}`;
+    const targetEmployeeId = empId || currentEmployeeId;
+
+    const apiUrl = `${API_BASE_URL}/TimeSkip/attendances/summary-employee?employeeId=${targetEmployeeId}&month=${month + 1}&year=${year}`;
     let attendanceData = [];
     try {
       const response = await fetch(apiUrl, { 
@@ -81,7 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       if (!response.ok) {
         console.error("API error:", response.status);
-        alert(`Lỗi khi lấy dữ liệu chấm công: ${response.status}`);
+        showToast(`Lỗi khi lấy dữ liệu chấm công: ${response.status}`, 'error');
         return;
       }
       const json = await response.json();
@@ -90,7 +115,7 @@ document.addEventListener("DOMContentLoaded", () => {
                      : (json.data || []);
     } catch (err) {
       console.error("Fetch failed:", err);
-      alert("Lỗi kết nối API chấm công");
+      showToast("Lỗi kết nối API chấm công", 'error');
       return;
     }
 
@@ -158,12 +183,6 @@ document.addEventListener("DOMContentLoaded", () => {
           selectedDate = date;
 
           modal.style.display = "flex";
-          // document.querySelector('input[name="status"][value="Normal"]').checked = true;
-          timeInputs.style.display = "block";
-
-          ["morningCheckIn", "morningCheckOut", "afternoonCheckIn", "afternoonCheckOut"].forEach(id => {
-            document.getElementById(id).value = attendance?.[id] || "";
-          });
         });
       }
 
@@ -177,29 +196,32 @@ document.addEventListener("DOMContentLoaded", () => {
   updateForm.onsubmit = async (e) => {
     e.preventDefault();
 
-    const selectedNote = document.querySelector('input[name="note"]:checked')?.value;
+    const selectedNote = document.querySelector('input[name="note"]:checked')?.value; 
     if (!selectedNote) {
-      alert("Vui lòng chọn trạng thái làm việc.");
+      showToast("Vui lòng chọn trạng thái làm việc.", 'error');
       return;
     }
 
     if ([selectedYear, selectedMonth, selectedDate].some(v => typeof v !== 'number')) {
-      alert("Chưa chọn ngày. Vui lòng chọn lại.");
+      showToast("Chưa chọn ngày. Vui lòng chọn lại.", 'error');
       return;
     }
 
     const isoDate = formatDate(new Date(selectedYear, selectedMonth, selectedDate));
     const token = auth.getLocalStorageWithExpiry('token');
 
-    const bodyData = {
-      employeeId: employeeIdRaw,
+    let bodyData = {
+      employeeId: currentEmployeeId,
       workDate: isoDate,
-      note: selectedNote
+      note: selectedNote 
     };
 
+    let apiUrl = `${API_BASE_URL}/LeaveRequest/submit-leave`; 
+    let requestMethod = "POST";
+
     try {
-      const res = await fetch(`${API_BASE_URL}/LeaveRequest/submit-leave`, {
-        method: "POST",
+      const res = await fetch(apiUrl, {
+        method: requestMethod,
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
@@ -208,22 +230,46 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       if (res.ok) {
-        alert("Cập nhật thành công!");
+        showToast("Cập nhật thành công!", 'success');
         document.getElementById("updateModal").style.display = "none";
-        generateCalendar(selectedYear, selectedMonth);
+        generateCalendar(selectedYear, selectedMonth, currentEmployeeId);
       } else {
-        alert("Lỗi cập nhật");
+        showToast("Lỗi cập nhật", 'error');
         console.error("Update error:", res.status, await res.text());
       }
     } catch (err) {
-      alert("Lỗi kết nối API");
+      showToast("Lỗi kết nối API", 'error');
       console.error(err);
     }
   };
 
-  monthSelect.addEventListener("change", () => generateCalendar(+yearSelect.value, +monthSelect.value));
-  yearSelect.addEventListener("change", () => generateCalendar(+yearSelect.value, +monthSelect.value));
+  monthSelect.addEventListener("change", () => generateCalendar(+yearSelect.value, +monthSelect.value, currentEmployeeId));
+  yearSelect.addEventListener("change", () => generateCalendar(+yearSelect.value, +monthSelect.value, currentEmployeeId));
+  employeeSelect.addEventListener("change", () => {
+    currentEmployeeId = +employeeSelect.value;
+    generateCalendar(+yearSelect.value, +monthSelect.value, currentEmployeeId);
+  });
 
   populateMonthYearSelectors();
-  generateCalendar(+yearSelect.value, +monthSelect.value);
+  fetchAllEmployees();
+  generateCalendar(+yearSelect.value, +monthSelect.value, currentEmployeeId);
 });
+
+// Toast notification function
+function showToast(message, type = 'success') {
+  const toast = document.getElementById('error-toast');
+  const msg = document.getElementById('error-message');
+  if (!toast || !msg) return;
+  msg.textContent = message;
+  toast.classList.remove('hidden', 'toast-error', 'toast-success');
+  toast.classList.add(type === 'success' ? 'toast-success' : 'toast-error');
+  toast.classList.add('toast');
+  setTimeout(() => {
+    toast.classList.add('hidden');
+  }, 3000);
+  // Đóng bằng nút X
+  const closeBtn = toast.querySelector('.toast-close');
+  if (closeBtn) {
+    closeBtn.onclick = () => toast.classList.add('hidden');
+  }
+}

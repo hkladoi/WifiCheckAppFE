@@ -1,10 +1,10 @@
 document.addEventListener('DOMContentLoaded', async function() {
     // Check if user is logged in
-    // const token = auth.getLocalStorageWithExpiry("token");
-    // if (!token) {
-    //     window.location.href = "login.html";
-    //     return;
-    // }
+    if (!auth.isAuthenticated()) {
+        showToast("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.", 'error');
+        auth.logout();
+        return;
+    }
 
     // Load header menu
     try {
@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // Update UI based on user role
         const role = auth.getLocalStorageWithExpiry("role");
-        if (role === "admin") {
+        if (role.toLowerCase() === "admin") {
             document.getElementById('admin-link').style.display = 'block';
         }
 
@@ -47,3 +47,22 @@ document.addEventListener('DOMContentLoaded', async function() {
         console.error('Error loading header menu:', error);
     }
 });
+
+// Toast notification function
+function showToast(message, type = 'success') {
+    const toast = document.getElementById('error-toast');
+    const msg = document.getElementById('error-message');
+    if (!toast || !msg) return;
+    msg.textContent = message;
+    toast.classList.remove('hidden', 'toast-error', 'toast-success');
+    toast.classList.add(type === 'success' ? 'toast-success' : 'toast-error');
+    toast.classList.add('toast');
+    setTimeout(() => {
+        toast.classList.add('hidden');
+    }, 3000);
+    // Đóng bằng nút X
+    const closeBtn = toast.querySelector('.toast-close');
+    if (closeBtn) {
+        closeBtn.onclick = () => toast.classList.add('hidden');
+    }
+}

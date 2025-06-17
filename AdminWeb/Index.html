@@ -16,6 +16,8 @@
     <select id="year-select"></select>
     <label for="month-select">Tháng:</label>
     <select id="month-select"></select>
+    <label for="employee-select" id="employee-select-label" style="display:none;">Nhân viên:</label>
+    <select id="employee-select" style="display:none;"></select>
     <h2 id="calendar-title">BẢNG CHẤM CÔNG THÁNG</h2>
   </div>
     <div class="calendar" id="calendar">
@@ -35,6 +37,7 @@
         <label><input type="radio" name="note" value="Leave" /> Nghỉ phép</label><br>
         <label><input type="radio" name="note" value="Absent" /> Nghỉ không phép</label>
       </div>
+
       <button type="submit">Lưu</button>
     </form>
   </div>
@@ -43,12 +46,11 @@
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     const statusRadios = document.getElementsByName("note");
-    const timeInputs = document.getElementById("timeInputs");
 
     statusRadios.forEach(radio => {
       radio.addEventListener("change", () => {
         if (radio.value === "Normal" && radio.checked) {
-          timeInputs.style.display = "block";
+          // timeInputs.style.display = "block";
         } else if (radio.checked) {
           // timeInputs.style.display = "none";
         }
@@ -67,5 +69,16 @@
 <script src="js/auth.js"></script>
 <script src="js/header.js"></script>
 <script src="js/index.js"></script>
+
+<!-- Toast Notification -->
+<div id="error-toast" class="toast hidden" role="alert">
+  <div class="toast-content">
+    <i class="fas fa-exclamation-circle"></i>
+    <span id="error-message"></span>
+  </div>
+  <button class="toast-close" aria-label="Đóng thông báo">
+    <i class="fas fa-times"></i>
+  </button>
+</div>
 </body>
 </html>

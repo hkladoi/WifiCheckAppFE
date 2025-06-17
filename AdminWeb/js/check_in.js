@@ -145,12 +145,11 @@ async function submitCheckIn(notes) {
             throw new Error('Không tìm thấy email người dùng. Vui lòng đăng nhập lại.');
         }
 
+        // Convert to Vietnam timezone
         const currentCheckInTime = new Date();
-        const { lateMinute, checkinStatus } = calculateAttendanceStatus(currentCheckInTime, 'checkin');
+        const vietnamTime = new Date(currentCheckInTime.getTime() + (7 * 60 * 60 * 1000)); // Add 7 hours for Vietnam timezone
+        const { lateMinute, checkinStatus } = calculateAttendanceStatus(vietnamTime, 'checkin');
         
-        // Format date to Vietnam timezone
-        const vietnamTime = new Date(currentCheckInTime.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));
-
         const hours = vietnamTime.getHours();
         const typecheck = hours < 12 ? 1 : 2; // 1 for morning, 2 for afternoon
 
@@ -162,7 +161,7 @@ async function submitCheckIn(notes) {
             },
             body: JSON.stringify({
                 email: userEmail,
-                checkIn: currentCheckInTime,
+                checkIn: vietnamTime.toISOString(),
                 lateMinute: lateMinute,
                 checkinStatus: checkinStatus,
                 typecheck: typecheck,
@@ -203,25 +202,14 @@ async function submitCheckOut(notes) {
             throw new Error('Không tìm thấy email người dùng. Vui lòng đăng nhập lại.');
         }
 
+        // Convert to Vietnam timezone
         const currentCheckOutTime = new Date();
-        const { earlyCheckOutMinutes, checkoutStatus } = calculateAttendanceStatus(currentCheckOutTime, 'checkout');
+        const vietnamTime = new Date(currentCheckOutTime.getTime() + (7 * 60 * 60 * 1000)); // Add 7 hours for Vietnam timezone
+        const { earlyCheckOutMinutes, checkoutStatus } = calculateAttendanceStatus(vietnamTime, 'checkout');
 
-        // Determine typecheck based on time of day
-        const hours = currentCheckOutTime.getHours();
+        const hours = vietnamTime.getHours();
         const typecheck = hours < 12 ? 1 : 2; // 1 for morning, 2 for afternoon
-
-        // Format date to Vietnam timezone
-        const vietnamTime = new Date(currentCheckOutTime.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));
-        const formattedTime = vietnamTime.toLocaleString('en-US', { 
-            timeZone: 'Asia/Ho_Chi_Minh',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false
-        }).replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+):(\d+)/, '$3-$1-$2T$4:$5:$6.000Z');
+        console.log(vietnamTime.toISOString());
 
         const response = await fetch(`${API_BASE_URL}/TimeSkip/checkout`, {
             method: 'POST',
@@ -231,7 +219,7 @@ async function submitCheckOut(notes) {
             },
             body: JSON.stringify({
                 email: userEmail,
-                checkOut: formattedTime,
+                checkOut: vietnamTime.toISOString(),
                 earlyCheckOutMinutes: earlyCheckOutMinutes,
                 checkoutStatus: checkoutStatus,
                 typecheck: typecheck,
@@ -303,18 +291,32 @@ async function initializePage() {
         noteInput.disabled = true;
     }
 
-    // Add checkbox event listener
-    forceCheckLocationCheckbox.addEventListener('change', () => {
-        noteInput.disabled = !forceCheckLocationCheckbox.checked;
-        if (forceCheckLocationCheckbox.checked) {
-            statusMessage.style.display = 'none'; // Hide any existing message
+    // Function to update button states based on checkbox and note input
+    function updateButtonStates() {
+        if (!forceCheckLocationCheckbox.checked) {
+            // If checkbox is not checked, enable buttons
             checkInButton.disabled = false;
             checkOutButton.disabled = false;
-        }else{
-            checkInButton.disabled = true;
-            checkOutButton.disabled = true;
+            noteInput.disabled = true;
+        } else {
+            // If checkbox is checked, enable note input and check note content
+            noteInput.disabled = false;
+            const hasNote = noteInput.value.trim().length > 0;
+            checkInButton.disabled = !hasNote;
+            checkOutButton.disabled = !hasNote;
+        }
+    }
+
+    // Add checkbox event listener
+    forceCheckLocationCheckbox.addEventListener('change', () => {
+        updateButtonStates();
+        if (forceCheckLocationCheckbox.checked) {
+            statusMessage.style.display = 'none'; // Hide any existing message
         }
     });
+
+    // Add note input event listener
+    noteInput.addEventListener('input', updateButtonStates);
 
     // Xử lý sự kiện click nút chấm công (Check-in)
     checkInButton.addEventListener('click', async () => {
@@ -323,11 +325,6 @@ async function initializePage() {
             checkOutButton.disabled = true;
 
             const userLocation = await getCurrentLocation();
-            // const userLocation = {
-            //     latitude: 21.0304266669616,
-            //     longitude: 105.76412196764761
-            // };
-            // let notes = `Chấm công ngoài công ty ở vị trí ${userLocation.latitude.toFixed(6)}, ${userLocation.longitude.toFixed(6)}`;
             let notes = `Chấm công trên website.`;
             
             // Add user's note if checkbox is checked and note is provided
@@ -341,8 +338,7 @@ async function initializePage() {
             const result = await submitCheckIn(notes);
         } catch (error) {
             showMessage(error.message, true);
-            checkInButton.disabled = false;
-            checkOutButton.disabled = false;
+            updateButtonStates(); // Restore button states after error
         }
     });
 
@@ -353,10 +349,6 @@ async function initializePage() {
             checkOutButton.disabled = true;
 
             const userLocation = await getCurrentLocation();
-            // const userLocation = {
-            //     latitude: 21.0304266669616,
-            //     longitude: 105.76412196764761
-            // };
             let notes = `Ra về trên website.`;
             
             // Add user's note if checkbox is checked and note is provided
@@ -370,21 +362,13 @@ async function initializePage() {
             const result = await submitCheckOut(notes);
         } catch (error) {
             showMessage(error.message, true);
-            checkInButton.disabled = false;
-            checkOutButton.disabled = false;
+            updateButtonStates(); // Restore button states after error
         }
     });
 }
 
 // Khởi tạo trang khi DOM đã sẵn sàng
 document.addEventListener("DOMContentLoaded", () => {
-//   const employeeIdRaw = auth.getLocalStorageWithExpiry("employeeId");
-//   const employeeId = employeeIdRaw ? parseInt(employeeIdRaw) : null;
 
-  if (!auth.isAuthenticated()) {
-    alert("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
-    auth.logout();
-    return;
-  }
   initializePage();
 }); 

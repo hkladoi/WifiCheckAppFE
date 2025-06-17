@@ -610,13 +610,6 @@ const init = () => {
 
 // Start the application
 document.addEventListener("DOMContentLoaded", () => {
-  // const employeeIdRaw = auth.getLocalStorageWithExpiry("employeeId");
-  // const employeeId = employeeIdRaw ? parseInt(employeeIdRaw) : null;
 
-  if (!auth.isAuthenticated()) {
-    alert("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
-    auth.logout();
-    return;
-  }
   init();
 });

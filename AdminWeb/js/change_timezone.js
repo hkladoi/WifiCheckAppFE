@@ -1,12 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // const employeeIdRaw = auth.getLocalStorageWithExpiry("employeeId");
-  // const employeeId = employeeIdRaw ? parseInt(employeeIdRaw) : null;
-
-  if (!auth.isAuthenticated()) {
-    alert("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
-    auth.logout();
-    return;
-  }
 
   const tbody = document.getElementById("days-body");
   const userId = auth.getLocalStorageWithExpiry("userId");
@@ -17,8 +9,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let searchTerm = "";
   let selectedSession = "1"; // Mặc định là ca sáng
-
-  console.log("UserID:", userId);
 
   // --- 1. Khi trang load, tự động lấy ngày mới nhất ---
   try {
@@ -52,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const selectedDate = selectedDateInput.value;
 
     if (!selectedDate) {
-      alert("Vui lòng chọn ngày trước khi tìm kiếm.");
+      showToast("Vui lòng chọn ngày trước khi tìm kiếm.", 'error');
       return;
     }
 
@@ -91,6 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
           tr.dataset.attendanceId = attendanceId ?? "";
           tr.dataset.sessionId = session;
+          tr.dataset.originalReason = sessionData?.latestHistoryNote || "";
 
           tr.innerHTML = `
             <td>${row.stt}</td>
@@ -99,7 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <td><input type="time" class="check-out" value="${sessionData?.checkOutTime || ""}" /></td>
             <td><textarea class="notes" readonly>${sessionData?.notes || ""}</textarea></td>
             <td><textarea class="noteOut" readonly>${sessionData?.noteOut || ""}</textarea></td>
-            <td><textarea class="reason" placeholder="Nhập lý do" rows="3"></textarea></td>
+            <td><textarea class="reason" placeholder="Nhập lý do" rows="3">${sessionData?.latestHistoryNote || ""}</textarea></td>
             <td><button type="button" class="save-btn">Lưu</button></td>
           `;
 
@@ -128,9 +119,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const checkIn = row.querySelector(".check-in").value;
         const checkOut = row.querySelector(".check-out").value;
         const reason = row.querySelector(".reason").value?.trim();
+        const originalReason = row.dataset.originalReason;
+
+        if (reason === originalReason) {
+          showToast("Vui lòng nhập lý do thay đổi khác với lý do trước đó.", 'error');
+          return;
+        }
 
         if (!checkIn && !checkOut && !reason) {
-          alert("Không có dữ liệu nào để lưu.");
+          showToast("Không có dữ liệu nào để lưu.", 'error');
           return;
         }
 
@@ -154,7 +151,10 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
           const res = await fetch(`${API_BASE_URL}/Admin/ModifyAttendance`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${auth.getLocalStorageWithExpiry('token')}`
+            },
             body: JSON.stringify(payload)
           });
 
@@ -164,15 +164,35 @@ document.addEventListener("DOMContentLoaded", () => {
           }
 
           const data = await res.json();
-          console.log("Kết quả từ server:", data);
 
-          alert("Đã lưu thành công!");
+          showToast("Đã lưu thành công!", 'success');
+          // Update the original reason after successful save
+          row.dataset.originalReason = reason;
           loadDataForDate(selectedDate, searchTerm, selectedSession);
         } catch (error) {
           console.error(error);
-          alert("Không thể lưu dữ liệu. Vui lòng thử lại.");
+          showToast("Không thể lưu dữ liệu. Vui lòng thử lại.", 'error');
         }
       });
     });
+  }
+
+  // Toast notification function
+  function showToast(message, type = 'success') {
+    const toast = document.getElementById('error-toast');
+    const msg = document.getElementById('error-message');
+    if (!toast || !msg) return;
+    msg.textContent = message;
+    toast.classList.remove('hidden', 'toast-error', 'toast-success');
+    toast.classList.add(type === 'success' ? 'toast-success' : 'toast-error');
+    toast.classList.add('toast');
+    setTimeout(() => {
+      toast.classList.add('hidden');
+    }, 3000);
+    // Đóng bằng nút X
+    const closeBtn = toast.querySelector('.toast-close');
+    if (closeBtn) {
+      closeBtn.onclick = () => toast.classList.add('hidden');
+    }
   }
 });
