@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WifiCheckApp_API.Models;
@@ -19,6 +19,7 @@ namespace WifiCheckApp_API.Controllers
         }
 
         [HttpGet("GetLeaveRequests")]
+        [Authorize]
         public async Task<IActionResult> GetLeaveRequests()
         {
             try
@@ -38,7 +39,9 @@ namespace WifiCheckApp_API.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, "Error fetching leave requests");
             }
         }
+
         [HttpGet("GetLeaveRequestByEmployeeId/{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetLeaveRequestByEmployeeId(int id)
         {
             try
@@ -91,6 +94,7 @@ namespace WifiCheckApp_API.Controllers
         }
 
         [HttpPost("ApproveRequests")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ApproveRequests([FromBody] RequestsModel requests)
         {
             if (requests.RequestIds == null || !requests.RequestIds.Any())
@@ -125,6 +129,7 @@ namespace WifiCheckApp_API.Controllers
         }
 
         [HttpPost("RejectRequests")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> RejectRequests([FromBody] RequestsModel requests)
         {
             if (requests.RequestIds == null || !requests.RequestIds.Any())
@@ -156,6 +161,34 @@ namespace WifiCheckApp_API.Controllers
                 _logger.LogError(ex, "Error rejecting leave requests");
                 return StatusCode(StatusCodes.Status500InternalServerError, "Error rejecting leave requests");
             }
+        }
+
+        [HttpPost("submit-leave")]
+        public async Task<IActionResult> SubmitLeave([FromBody] LeaveRequestModel request)
+        {
+            if (!await _context.Employees.AnyAsync(e => e.EmployeeId == request.EmployeeId))
+                return BadRequest($"Không tìm thấy nhân viên với EmployeeId = {request.EmployeeId}");
+
+            var leaveRequest = new LeaveRequest
+            {
+                EmployeeId = request.EmployeeId,
+                FromTime = request.FromTime,
+                ToTime = request.ToTime,
+                SessionId = request.SessionId,
+                LeaveTypeId = request.LeaveTypeId,
+                Reason = request.Reason,
+                Status = "Confirm",
+                RequestedAt = DateTime.Now
+            };
+
+            _context.LeaveRequests.Add(leaveRequest);
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                Message = "Trạng thái nghỉ đã được ghi nhận.",
+                LeaveId = leaveRequest.LeaveId
+            });
         }
     }
 }

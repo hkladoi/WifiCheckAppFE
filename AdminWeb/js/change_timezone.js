@@ -1,8 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const employeeIdRaw = auth.getLocalStorageWithExpiry("employeeId");
-  const employeeId = employeeIdRaw ? parseInt(employeeIdRaw) : null;
+  // const employeeIdRaw = auth.getLocalStorageWithExpiry("employeeId");
+  // const employeeId = employeeIdRaw ? parseInt(employeeIdRaw) : null;
 
-  if (!employeeId) {
+  if (!auth.isAuthenticated()) {
     alert("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
     auth.logout();
     return;
@@ -61,7 +61,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Hàm chính để gọi API lấy dữ liệu chấm công và vẽ bảng ---
   function loadDataForDate(date, searchTerm = "", session = "1") {
-    fetch(`${API_BASE_URL}/TimeSkip/by-date?date=${date}`)
+    const token = auth.getLocalStorageWithExpiry('token');
+    fetch(`${API_BASE_URL}/Admin/daily-summary?workDate=${date}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
       .then(res => {
         if (!res.ok) throw new Error("Lỗi khi tải dữ liệu");
         return res.json();
@@ -146,7 +152,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         try {
-          const res = await fetch(`${API_BASE_URL}/TimeSkip/adjust`, {
+          const res = await fetch(`${API_BASE_URL}/Admin/ModifyAttendance`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)

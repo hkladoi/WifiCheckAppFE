@@ -117,8 +117,14 @@ function getCurrentLocation() {
 
 // Hàm lấy danh sách vị trí được phép từ API
 async function getAllowedLocations() {
+    const token = auth.getLocalStorageWithExpiry('token');
     try {
-        const response = await fetch(`${API_BASE_URL}/Gps/GetAllGps`);
+        const response = await fetch(`${API_BASE_URL}/Gps/GetAllGps`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
         if (!response.ok) {
             throw new Error('Không thể lấy danh sách vị trí');
         }
@@ -142,22 +148,11 @@ async function submitCheckIn(notes) {
         const currentCheckInTime = new Date();
         const { lateMinute, checkinStatus } = calculateAttendanceStatus(currentCheckInTime, 'checkin');
         
-        // Determine typecheck based on time of day
-        const hours = currentCheckInTime.getHours();
-        const typecheck = hours < 12 ? 1 : 2; // 1 for morning, 2 for afternoon
-
         // Format date to Vietnam timezone
         const vietnamTime = new Date(currentCheckInTime.toLocaleString('en-US', { timeZone: 'Asia/Ho_Chi_Minh' }));
-        const formattedTime = vietnamTime.toLocaleString('en-US', { 
-            timeZone: 'Asia/Ho_Chi_Minh',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false
-        }).replace(/(\d+)\/(\d+)\/(\d+),\s(\d+):(\d+):(\d+)/, '$3-$1-$2T$4:$5:$6.000Z');
+
+        const hours = vietnamTime.getHours();
+        const typecheck = hours < 12 ? 1 : 2; // 1 for morning, 2 for afternoon
 
         const response = await fetch(`${API_BASE_URL}/TimeSkip/checkin`, {
             method: 'POST',
@@ -167,7 +162,7 @@ async function submitCheckIn(notes) {
             },
             body: JSON.stringify({
                 email: userEmail,
-                checkIn: formattedTime,
+                checkIn: currentCheckInTime,
                 lateMinute: lateMinute,
                 checkinStatus: checkinStatus,
                 typecheck: typecheck,
@@ -332,11 +327,15 @@ async function initializePage() {
             //     latitude: 21.0304266669616,
             //     longitude: 105.76412196764761
             // };
-            let notes = `Chấm công ngoài công ty ở vị trí ${userLocation.latitude.toFixed(6)}, ${userLocation.longitude.toFixed(6)}`;
+            // let notes = `Chấm công ngoài công ty ở vị trí ${userLocation.latitude.toFixed(6)}, ${userLocation.longitude.toFixed(6)}`;
+            let notes = `Chấm công trên website.`;
             
             // Add user's note if checkbox is checked and note is provided
-            if (forceCheckLocationCheckbox.checked && noteInput.value.trim()) {
-                notes += `\nLý do: ${noteInput.value.trim()}`;
+            if (forceCheckLocationCheckbox.checked) {
+                notes += `Ngoài công ty ở vị trí ${userLocation.latitude.toFixed(6)}, ${userLocation.longitude.toFixed(6)}`;
+                if (noteInput.value.trim()) {
+                    notes += `\nLý do: ${noteInput.value.trim()}`;
+                }
             }
             
             const result = await submitCheckIn(notes);
@@ -358,11 +357,14 @@ async function initializePage() {
             //     latitude: 21.0304266669616,
             //     longitude: 105.76412196764761
             // };
-            let notes = `Ra về ngoài công ty ở vị trí ${userLocation.latitude.toFixed(6)}, ${userLocation.longitude.toFixed(6)}`;
+            let notes = `Ra về trên website.`;
             
             // Add user's note if checkbox is checked and note is provided
-            if (forceCheckLocationCheckbox.checked && noteInput.value.trim()) {
-                notes += `\nLý do: ${noteInput.value.trim()}`;
+            if (forceCheckLocationCheckbox.checked) {
+                notes += `Ngoài công ty ở vị trí ${userLocation.latitude.toFixed(6)}, ${userLocation.longitude.toFixed(6)}`;
+                if (noteInput.value.trim()) {
+                    notes += `\nLý do: ${noteInput.value.trim()}`;
+                }
             }
             
             const result = await submitCheckOut(notes);
@@ -376,10 +378,10 @@ async function initializePage() {
 
 // Khởi tạo trang khi DOM đã sẵn sàng
 document.addEventListener("DOMContentLoaded", () => {
-  const employeeIdRaw = auth.getLocalStorageWithExpiry("employeeId");
-  const employeeId = employeeIdRaw ? parseInt(employeeIdRaw) : null;
+//   const employeeIdRaw = auth.getLocalStorageWithExpiry("employeeId");
+//   const employeeId = employeeIdRaw ? parseInt(employeeIdRaw) : null;
 
-  if (!employeeId) {
+  if (!auth.isAuthenticated()) {
     alert("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
     auth.logout();
     return;

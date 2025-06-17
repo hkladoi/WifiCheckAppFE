@@ -2,9 +2,8 @@
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using WifiCheckApp_API.Controllers;
 using WifiCheckApp_API.Models;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,12 +32,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-
-
-
-
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<HelpersClass>();
 
 builder.Services.AddCors(options =>
 {
@@ -50,7 +46,6 @@ builder.Services.AddCors(options =>
                    .AllowAnyMethod();
         });
 });
-
 
 var app = builder.Build();
 

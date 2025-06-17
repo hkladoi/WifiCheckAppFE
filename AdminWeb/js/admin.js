@@ -138,6 +138,7 @@ function getLeaveTypeText(type) {
 const loadData = async () => {
   const selectedMonth = elements.monthInput.value;
   const nameFilter = elements.nameInput.value.trim().toLowerCase();
+  const token = auth.getLocalStorageWithExpiry('token');
 
     if (!selectedMonth || selectedMonth.length !== 7) {
     elements.tableBody.innerHTML = '<tr><td colspan="9">Vui lòng chọn tháng hợp lệ.</td></tr>';
@@ -146,7 +147,12 @@ const loadData = async () => {
 
   showLoading();
   try {
-    const response = await fetch(`${API_BASE_URL}/TimeSkip/summary?month=${selectedMonth}`);
+    const response = await fetch(`${API_BASE_URL}/Admin/monthly-summary?month=${selectedMonth}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
         if (!response.ok) throw new Error('Lỗi khi gọi API summary');
     const data = await response.json();
 
@@ -299,10 +305,14 @@ const approveSelectedRequests = async () => {
     }
 
   showLoading();
+  const token = auth.getLocalStorageWithExpiry('token');
   try {
     const response = await fetch(`${API_BASE_URL}/LeaveRequest/ApproveRequests`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify({
         requestIds: state.selectedRequestIds,
         isApproved: true
@@ -531,15 +541,26 @@ async function loadLeaveRequests(employeeId, employeeName) {
     popup.classList.remove('hidden');
   }
   showLoading();
+  const token = auth.getLocalStorageWithExpiry('token');
   try {
     // Lấy leaveTypes nếu chưa có
     if (!globalLeaveTypes.length) {
-      const res = await fetch(`${API_BASE_URL}/TimeSkip/leave-types`);
+      const res = await fetch(`${API_BASE_URL}/Admin/leave-types`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       if (res.ok) globalLeaveTypes = await res.json();
     }
     // Luôn fill lại filter và reset về '-- Tất cả --'
     fillLeaveTypeFilter(globalLeaveTypes, '');
-    const response = await fetch(`${API_BASE_URL}/LeaveRequest/GetLeaveRequestByEmployeeId/${employeeId}`);
+    const response = await fetch(`${API_BASE_URL}/LeaveRequest/GetLeaveRequestByEmployeeId/${employeeId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
     if (!response.ok) throw new Error('Lỗi khi tải đơn nghỉ phép');
     const requests = await response.json();
     displayLeaveRequests(requests, employeeName, true);
@@ -589,10 +610,10 @@ const init = () => {
 
 // Start the application
 document.addEventListener("DOMContentLoaded", () => {
-  const employeeIdRaw = auth.getLocalStorageWithExpiry("employeeId");
-  const employeeId = employeeIdRaw ? parseInt(employeeIdRaw) : null;
+  // const employeeIdRaw = auth.getLocalStorageWithExpiry("employeeId");
+  // const employeeId = employeeIdRaw ? parseInt(employeeIdRaw) : null;
 
-  if (!employeeId) {
+  if (!auth.isAuthenticated()) {
     alert("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
     auth.logout();
     return;

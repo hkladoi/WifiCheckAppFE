@@ -414,10 +414,10 @@ class WiFiManager {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    const employeeIdRaw = auth.getLocalStorageWithExpiry("employeeId");
-    const employeeId = employeeIdRaw ? parseInt(employeeIdRaw) : null;
+    // const employeeIdRaw = auth.getLocalStorageWithExpiry("employeeId");
+    // const employeeId = employeeIdRaw ? parseInt(employeeIdRaw) : null;
 
-    if (!employeeId) {
+    if (!auth.isAuthenticated()) {
         alert("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
         auth.logout();
         return;

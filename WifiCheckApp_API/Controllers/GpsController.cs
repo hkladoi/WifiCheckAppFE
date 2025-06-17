@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WifiCheckApp_API.Models;
@@ -18,6 +17,7 @@ namespace WifiCheckApp_API.Controllers
         }
 
         [HttpGet("GetAllGps")]
+        [Authorize]
         public async Task<List<GpsModel>> GetAllGpsLocations()
         {
             var gpsLocations = await _context.GpsLocations.ToListAsync();

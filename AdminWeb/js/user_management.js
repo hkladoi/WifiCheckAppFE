@@ -151,7 +151,7 @@ const updateUser = async () => {
   };
 
   try {
-    const response = await fetch(`${API_BASE_URL}/Authen/UpdateEmployee`, {
+    const response = await fetch(`${API_BASE_URL}/Admin/UpdateEmployee`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -185,7 +185,7 @@ const loadUsers = async () => {
 
   showLoading();
   try {
-    const response = await fetch(`${API_BASE_URL}/Authen/GetAllEmployee`, {
+    const response = await fetch(`${API_BASE_URL}/Admin/GetAllEmployee`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json' 
@@ -255,7 +255,7 @@ const resetUserPassword = async (userId) => {
   showLoading();
   const token = auth.getLocalStorageWithExpiry('token');
   try {
-    const response = await fetch(`${API_BASE_URL}/Authen/ResetPasswordDefault?userId=${userId}`, {
+    const response = await fetch(`${API_BASE_URL}/Admin/ResetPasswordDefault?userId=${userId}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -316,4 +316,14 @@ const init = () => {
   loadUsers(); // Initial load of users when the page loads
 };
 
-document.addEventListener('DOMContentLoaded', init); 
+document.addEventListener("DOMContentLoaded", () => {
+  //   const employeeIdRaw = auth.getLocalStorageWithExpiry("employeeId");
+  //   const employeeId = employeeIdRaw ? parseInt(employeeIdRaw) : null;
+  
+    if (!auth.isAuthenticated()) {
+      alert("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
+      auth.logout();
+      return;
+    }
+    init();
+  }); 

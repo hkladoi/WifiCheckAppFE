@@ -18,6 +18,7 @@ namespace WifiCheckApp_API.Controllers
         }
 
         [HttpGet("GetAllWifi")]
+        [Authorize]
         public async Task<List<WifiModels>> GetAllWifiLocations()
         {
             var wifiLocations = await _context.WiFiLocations.Include(c => c.WiFiBssids).ToListAsync();

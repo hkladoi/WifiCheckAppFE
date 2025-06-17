@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const employeeIdRaw = auth.getLocalStorageWithExpiry("employeeId");
   const employeeId = employeeIdRaw ? parseInt(employeeIdRaw) : null;
 
-  if (!employeeId) {
+  if (!auth.isAuthenticated()) {
     alert("Không tìm thấy thông tin nhân viên. Vui lòng đăng nhập lại.");
     auth.logout();
     return;
@@ -73,7 +73,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const apiUrl = `${API_BASE_URL}/TimeSkip/attendances/summary-employee?employeeId=${employeeId}&month=${month + 1}&year=${year}`;
     let attendanceData = [];
     try {
-      const response = await fetch(apiUrl, { headers: { "Authorization": `Bearer ${token}` } });
+      const response = await fetch(apiUrl, { 
+        headers: { 
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        } 
+      });
       if (!response.ok) {
         console.error("API error:", response.status);
         alert(`Lỗi khi lấy dữ liệu chấm công: ${response.status}`);
@@ -184,6 +189,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const isoDate = formatDate(new Date(selectedYear, selectedMonth, selectedDate));
+    const token = auth.getLocalStorageWithExpiry('token');
 
     const bodyData = {
       employeeId: employeeIdRaw,
@@ -192,7 +198,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     try {
-      const res = await fetch(`${API_BASE_URL}/TimeSkip/submit-leave`, {
+      const res = await fetch(`${API_BASE_URL}/LeaveRequest/submit-leave`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
