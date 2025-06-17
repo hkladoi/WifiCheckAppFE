@@ -17,7 +17,7 @@ namespace WifiCheckApp_API.Controllers
         }
 
         [HttpGet("GetAllGps")]
-        [Authorize]
+        //[Authorize]
         public async Task<List<GpsModel>> GetAllGpsLocations()
         {
             var gpsLocations = await _context.GpsLocations.ToListAsync();

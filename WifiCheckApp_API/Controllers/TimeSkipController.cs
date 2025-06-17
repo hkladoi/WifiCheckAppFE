@@ -48,7 +48,7 @@ namespace WifiCheckApp_API.Controllers
         }
 
         [HttpPost("checkin")]
-        [Authorize]
+        //[Authorize]
         public async Task<IActionResult> CheckIn([FromBody] CheckinModel dto)
         {
             if (!ModelState.IsValid)
@@ -115,7 +115,7 @@ namespace WifiCheckApp_API.Controllers
         }
 
         [HttpPost("checkout")]
-        [Authorize]
+        //[Authorize]
         public async Task<IActionResult> CheckOut([FromBody] CheckOutModel dto)
         {
             if (!ModelState.IsValid)
